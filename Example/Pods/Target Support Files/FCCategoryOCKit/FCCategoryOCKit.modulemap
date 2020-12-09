@@ -1,0 +1,6 @@
+framework module FCCategoryOCKit {
+  umbrella header "FCCategoryOCKit-umbrella.h"
+
+  export *
+  module * { export * }
+}

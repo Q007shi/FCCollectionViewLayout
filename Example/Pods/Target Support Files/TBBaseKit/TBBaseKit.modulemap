@@ -1,0 +1,6 @@
+framework module TBBaseKit {
+  umbrella header "TBBaseKit-umbrella.h"
+
+  export *
+  module * { export * }
+}

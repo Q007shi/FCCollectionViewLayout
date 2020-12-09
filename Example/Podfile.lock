@@ -1,0 +1,50 @@
+PODS:
+  - FCCategoryOCKit (0.1.15)
+  - FCCollectionViewLayout (0.0.1):
+    - FCCollectionViewLayout/ObjC (= 0.0.1)
+    - FCCollectionViewLayout/Swift (= 0.0.1)
+  - FCCollectionViewLayout/ObjC (0.0.1)
+  - FCCollectionViewLayout/Swift (0.0.1)
+  - FDFullscreenPopGesture (1.1)
+  - Masonry (1.1.0)
+  - SVProgressHUD (2.2.5)
+  - TBBaseKit (0.0.26):
+    - FCCategoryOCKit
+    - FDFullscreenPopGesture
+    - Masonry
+    - SVProgressHUD
+
+DEPENDENCIES:
+  - FCCollectionViewLayout (from `../`)
+  - Masonry
+  - TBBaseKit (from `https://gitee.com/tb-ios/TBBaseKit.git`)
+
+SPEC REPOS:
+  trunk:
+    - FCCategoryOCKit
+    - FDFullscreenPopGesture
+    - Masonry
+    - SVProgressHUD
+
+EXTERNAL SOURCES:
+  FCCollectionViewLayout:
+    :path: "../"
+  TBBaseKit:
+    :git: https://gitee.com/tb-ios/TBBaseKit.git
+
+CHECKOUT OPTIONS:
+  TBBaseKit:
+    :commit: 7581197b6892d4d05ae54e32105fa5db7c754156
+    :git: https://gitee.com/tb-ios/TBBaseKit.git
+
+SPEC CHECKSUMS:
+  FCCategoryOCKit: 05a9d0ab9a8ec644d4e07d73efd6caede804138a
+  FCCollectionViewLayout: 96bebdd9b112e44d41108c2f99ee5706dfdb76e7
+  FDFullscreenPopGesture: a8a620179e3d9c40e8e00256dcee1c1a27c6d0f0
+  Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
+  SVProgressHUD: 1428aafac632c1f86f62aa4243ec12008d7a51d6
+  TBBaseKit: a6295e38a3edb241f8f6c74f6a44f4804396bb4e
+
+PODFILE CHECKSUM: 0509fa17c1e38f6f0e870ecfa17a7271cfcbee84
+
+COCOAPODS: 1.9.1

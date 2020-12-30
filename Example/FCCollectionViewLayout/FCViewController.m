@@ -10,12 +10,19 @@
 #import <FCCategoryOCKit/FCCategoryOCKit.h>
 #import <Masonry/Masonry.h>
 #import "FCSectionModel.h"
+#import <MJRefresh/MJRefresh.h>
 //
 #import "FCCollectionReusableView_Two.h"
 #import "FCCollectionReusableView_One.h"
 #import "FCCollectionViewLayoutAttributes.h"
 
-@interface FCViewController ()<UICollectionViewDataSource,UICollectionViewDelegate,FCCollectionViewDelegateFlowLayout,FCCollectionViewLayoutDecorationViewDelegate>
+@interface FCViewController ()<UICollectionViewDataSource,UICollectionViewDelegate,FCCollectionViewDelegateFlowLayout,FCCollectionViewLayoutDecorationViewDelegate>{
+    CFDictionaryRef _dicRef;
+    id obj;
+    
+    NSString *_str;
+    CGRect _rect;
+}
 
 /** <#aaa#>  */
 @property(nonatomic, strong)FCCollectionViewLayout *flowLayout;
@@ -31,11 +38,41 @@
 
 @implementation FCViewController
 
+
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     [self.view addSubview:self.collectionView];
+    [self.collectionView mas_makeConstraints:^(MASConstraintMaker *make) {
+        make.edges.mas_equalTo(UIEdgeInsetsZero);
+    }];
     
+    _str = NSStringFromCGRect(self.view.frame);
+    CGRect rect = CGRectFromString(_str);
+    _rect = rect;
+    
+    _dicRef = CGRectCreateDictionaryRepresentation(_rect);
+    
+    NSLog(@"%@",_str);
+    NSLog(@"%@",_dicRef);
+    
+    CFDictionaryRef dicRef = CGPointCreateDictionaryRepresentation(CGPointMake(10, 10));
+    NSLog(@"%@",dicRef);
+//    NSLog(@"%@",NSStringFromClass([CFBridgingRelease(dicRef) class]));
+//    NSLog(@"%@",dicRef);
+    NSLog(@"%@",NSStringFromClass([NSDictionary.dictionary class]));
+    NSLog(@"%@",NSStringFromClass([NSDictionary.new class]));
+    obj = CFBridgingRelease(dicRef);
+
+    NSLog(@"obj1 %@",obj);
+    
+    
+}
+- (void)viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
+    NSLog(@"%@",_str);
+    NSLog(@"%@",_dicRef);
 }
 
 //MARK: UICollectionViewDataSource
@@ -109,11 +146,15 @@
 - (FCCollectionViewItemsLayoutType)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout itemsLayoutTypeAtIndex:(NSInteger)section{
     return self.datas[section].layoutType;
 }
+/** section 之间的间距  */
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout sectionSpaceAtIndex:(NSInteger)section{
+    return self.datas[section].sectionSpace;
+}
 
 /**
  collectionView 分为几列，最小为1；默认2；当  itemsLayoutType ==  FCCollectionViewItemsLayoutTypeWaterFlow 时有效
  */
-- (NSInteger)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout columnNumAtIndex:(NSInteger)section{
+- (NSUInteger)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout columnNumAtIndex:(NSInteger)section{
     return self.datas[section].columnNum;
 }
 
@@ -169,7 +210,7 @@
 }
 - (UICollectionView *)collectionView{
     if (!_collectionView) {
-        _collectionView = [[UICollectionView alloc]initWithFrame:self.view.bounds collectionViewLayout:self.flowLayout];
+        _collectionView = [[UICollectionView alloc]initWithFrame:CGRectZero collectionViewLayout:self.flowLayout];
         _collectionView.dataSource = self;
         _collectionView.delegate = self;
         if (@available(iOS 11.0,*)) {
@@ -177,7 +218,7 @@
         }else{
             self.automaticallyAdjustsScrollViewInsets = NO;
         }
-        _collectionView.contentInset = UIEdgeInsetsMake(100, 20, 30, 40);
+//        _collectionView.contentInset = UIEdgeInsetsMake(0, 10, 0, 40);
         _collectionView.backgroundColor = UIColor.whiteColor;
         //
         [_collectionView registerClass:UICollectionViewCell.class forCellWithReuseIdentifier:@"aa"];
@@ -186,6 +227,17 @@
         
         [_collectionView registerClass:UICollectionReusableView.class forSupplementaryViewOfKind:UICollectionElementKindSectionFooter withReuseIdentifier:@"aa"];
         
+        //
+        _collectionView.mj_header = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self.collectionView.mj_header endRefreshing];
+            });
+        }];
+        _collectionView.mj_footer = [MJRefreshBackStateFooter footerWithRefreshingBlock:^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self.collectionView.mj_footer endRefreshing];
+            });
+        }];
     }
     return _collectionView;
 }
@@ -204,14 +256,14 @@
         [_datas addObjectsFromArray:[self horizontalAlign:FCCollectionViewItemsHorizontalAlignmentFlow verticalAlign:FCCollectionViewItemsVerticalAlignmentTop flowDirection:FCCollectionViewItemsFlowDirectionL2R2L]];
         [_datas addObjectsFromArray:[self horizontalAlign:FCCollectionViewItemsHorizontalAlignmentFlow verticalAlign:FCCollectionViewItemsVerticalAlignmentTop flowDirection:FCCollectionViewItemsFlowDirectionR2L]];
         [_datas addObjectsFromArray:[self horizontalAlign:FCCollectionViewItemsHorizontalAlignmentFlow verticalAlign:FCCollectionViewItemsVerticalAlignmentTop flowDirection:FCCollectionViewItemsFlowDirectionR2L2R]];
-        
-        
-        
+
+
+
         [_datas addObjectsFromArray:[self horizontalAlign:FCCollectionViewItemsHorizontalAlignmentFlow verticalAlign:FCCollectionViewItemsVerticalAlignmentBottom flowDirection:FCCollectionViewItemsFlowDirectionL2R]];
-        
-        
-        
-        
+//
+//
+//
+//
         [_datas addObjectsFromArray:[self horizontalAlign:FCCollectionViewItemsHorizontalAlignmentFlowDirection verticalAlign:FCCollectionViewItemsVerticalAlignmentCenter flowDirection:FCCollectionViewItemsFlowDirectionL2R]];
         [_datas addObjectsFromArray:[self horizontalAlign:FCCollectionViewItemsHorizontalAlignmentFlowFill verticalAlign:FCCollectionViewItemsVerticalAlignmentCenter flowDirection:FCCollectionViewItemsFlowDirectionL2R]];
         [_datas addObjectsFromArray:[self horizontalAlign:FCCollectionViewItemsHorizontalAlignmentLeft verticalAlign:FCCollectionViewItemsVerticalAlignmentCenter flowDirection:FCCollectionViewItemsFlowDirectionL2R]];
@@ -226,11 +278,14 @@
     FCSectionModel *sectionM5 = [[FCSectionModel alloc]init:^(FCSectionModel *sm) {
         sm.sectionHeaderSize = CGSizeMake(100, 10);
         sm.sectionFooterSize = CGSizeMake(10, 20);;
-        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
+//        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
         sm.horizontalAlignment = horizontalAlign;
         sm.verticalAlignment = verticalAlign;
         sm.flowDirection = flowDirection;
-        sm.layoutType = FCCollectionViewItemsLayoutTypeFlow;
+        sm.layoutType = FCCollectionViewItemsLayoutTypeWaterFlow;
+        sm.columnNum = 2;
+        //
+        sm.sectionSpace = 20;
         //
         FCItemModel *m1 = [[FCItemModel alloc]init:^(FCItemModel *im) {
             im.itemSize = CGSizeMake(50, 20);
@@ -279,6 +334,22 @@
             im.contentEdgeInsets = UIEdgeInsetsMake(2, 3, 23, 24);
         }];
         [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
         
         FCCollectionViewDecorationViewMessageModel *dmM = [[FCCollectionViewDecorationViewMessageModel alloc]init:^(FCCollectionViewDecorationViewMessageModel *dm) {
             dm.reuseIdentifier = NSStringFromClass(FCCollectionReusableView_One.class);
@@ -297,10 +368,13 @@
     FCSectionModel *sectionM0 = [[FCSectionModel alloc]init:^(FCSectionModel *sm) {
         sm.sectionHeaderSize = CGSizeMake(100, 10);
         sm.sectionFooterSize = CGSizeMake(10, 20);;
-        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
+//        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
         sm.horizontalAlignment = horizontalAlign;
         sm.verticalAlignment = verticalAlign;
         sm.flowDirection = flowDirection;
+        
+        //
+        sm.sectionSpace = 20;
         //
         FCItemModel *m1 = [[FCItemModel alloc]init:^(FCItemModel *im) {
             im.itemSize = CGSizeMake(50, 20);
@@ -374,11 +448,13 @@
     FCSectionModel *sectionM1 = [[FCSectionModel alloc]init:^(FCSectionModel *sm) {
         sm.sectionHeaderSize = CGSizeMake(100, 10);
         sm.sectionFooterSize = CGSizeMake(10, 20);
-        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
+//        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
         sm.horizontalAlignment = horizontalAlign;
         sm.verticalAlignment = verticalAlign;
         sm.flowDirection = flowDirection;
         sm.layoutType = FCCollectionViewItemsLayoutTypeFlow;
+        //
+        sm.sectionSpace = 20;
         //
         FCItemModel *m1 = [[FCItemModel alloc]init:^(FCItemModel *im) {
             im.itemSize = CGSizeMake(50, 20);
@@ -453,11 +529,13 @@
     FCSectionModel *sectionM2 = [[FCSectionModel alloc]init:^(FCSectionModel *sm) {
         sm.sectionHeaderSize = CGSizeMake(100, 10);
         sm.sectionFooterSize = CGSizeMake(10, 20);
-        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
+//        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
         sm.horizontalAlignment = horizontalAlign;
         sm.verticalAlignment = verticalAlign;
         sm.flowDirection = flowDirection;
         sm.layoutType = FCCollectionViewItemsLayoutTypeFlow;
+        //
+        sm.sectionSpace = 20;
         //
         FCItemModel *m1 = [[FCItemModel alloc]init:^(FCItemModel *im) {
             im.itemSize = CGSizeMake(50, 20);
@@ -532,11 +610,13 @@
     FCSectionModel *sectionM3 = [[FCSectionModel alloc]init:^(FCSectionModel *sm) {
         sm.sectionHeaderSize = CGSizeMake(100, 10);
         sm.sectionFooterSize = CGSizeMake(10, 200);
-        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
+//        sm.insetForSection = UIEdgeInsetsMake(10, 10, 10, 10);
         sm.horizontalAlignment = horizontalAlign;
         sm.verticalAlignment = verticalAlign;
         sm.flowDirection = flowDirection;
         sm.layoutType = FCCollectionViewItemsLayoutTypeFlow;
+        //
+        sm.sectionSpace = 20;
         //
         FCItemModel *m1 = [[FCItemModel alloc]init:^(FCItemModel *im) {
             im.itemSize = CGSizeMake(50, 20);

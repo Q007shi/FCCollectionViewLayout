@@ -17,7 +17,7 @@ class FCCollectionViewDecorationViewMessageSwiftModel: NSObject{
     var decorationViewCenter: Bool = false
     
     //********** 自定义 UICollectionViewLayoutAttributes
-    var customLayoutAttributesClass : UICollectionViewLayoutAttributes.Type?
+    var customLayoutAttributesClass : AnyClass?
     var customParams: NSDictionary?
     
     //**********
@@ -28,7 +28,10 @@ class FCCollectionViewDecorationViewMessageSwiftModel: NSObject{
                 return temmpDecorationViewLayoutAttributes
             }else{
                 
-                if customLayoutAttributesClass != nil{
+                if let tempCustomLayoutAttributesClass = customLayoutAttributesClass{
+                    let TempCustomLayoutAttributesClass = tempCustomLayoutAttributesClass  as! UICollectionViewLayoutAttributes.Type
+                    _decorationViewLayoutAttributes = TempCustomLayoutAttributesClass.init(forDecorationViewOfKind: reuseIdentifier, with: IndexPath(item: 0, section: section))
+                    
                     
                 }else{
                     _decorationViewLayoutAttributes = UICollectionViewLayoutAttributes(forDecorationViewOfKind: reuseIdentifier, with: IndexPath(item: 0, section: section))

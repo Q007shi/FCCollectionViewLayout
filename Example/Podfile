@@ -5,6 +5,7 @@ platform :ios, '9.0'
 target 'FCCollectionViewLayout_Example' do
   pod 'FCCollectionViewLayout', :path => '../'
   
+  pod 'MJRefresh'
   pod 'Masonry'
   pod 'TBBaseKit', :git => 'https://gitee.com/tb-ios/TBBaseKit.git'
 #  pod 'FCDecorationCollectionViewFlowLayoutOC', :git => 'https://github.com/Q007shi/FCDecorationCollectionViewFlowLayoutOC.git'

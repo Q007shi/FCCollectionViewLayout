@@ -7,6 +7,7 @@ PODS:
   - FCCollectionViewLayout/Swift (0.0.1)
   - FDFullscreenPopGesture (1.1)
   - Masonry (1.1.0)
+  - MJRefresh (3.5.0)
   - SVProgressHUD (2.2.5)
   - TBBaseKit (0.0.26):
     - FCCategoryOCKit
@@ -17,6 +18,7 @@ PODS:
 DEPENDENCIES:
   - FCCollectionViewLayout (from `../`)
   - Masonry
+  - MJRefresh
   - TBBaseKit (from `https://gitee.com/tb-ios/TBBaseKit.git`)
 
 SPEC REPOS:
@@ -24,6 +26,7 @@ SPEC REPOS:
     - FCCategoryOCKit
     - FDFullscreenPopGesture
     - Masonry
+    - MJRefresh
     - SVProgressHUD
 
 EXTERNAL SOURCES:
@@ -39,12 +42,13 @@ CHECKOUT OPTIONS:
 
 SPEC CHECKSUMS:
   FCCategoryOCKit: 05a9d0ab9a8ec644d4e07d73efd6caede804138a
-  FCCollectionViewLayout: 96bebdd9b112e44d41108c2f99ee5706dfdb76e7
+  FCCollectionViewLayout: f5c888fe63a07d41ebdf521e256af86c5cabdd23
   FDFullscreenPopGesture: a8a620179e3d9c40e8e00256dcee1c1a27c6d0f0
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
+  MJRefresh: 6afc955813966afb08305477dd7a0d9ad5e79a16
   SVProgressHUD: 1428aafac632c1f86f62aa4243ec12008d7a51d6
   TBBaseKit: a6295e38a3edb241f8f6c74f6a44f4804396bb4e
 
-PODFILE CHECKSUM: 0509fa17c1e38f6f0e870ecfa17a7271cfcbee84
+PODFILE CHECKSUM: a435bdc5d5e22d6efa392992d7578668106b0d80
 
 COCOAPODS: 1.9.1

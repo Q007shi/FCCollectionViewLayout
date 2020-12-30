@@ -4,20 +4,24 @@
 //
 //  Created by 石富才 on 2020/8/17.
 //
+//https://www.jianshu.com/p/5ee9333644ed
+//https://blog.csdn.net/iosworker/article/details/50749697
+//https://blog.csdn.net/u013410274/article/details/79925531
+//http://code.cocoachina.com/view/132340
 
 #import <UIKit/UIKit.h>
 
 //** 装饰视图信息 **/
 @interface FCCollectionViewDecorationViewMessageModel : NSObject
 
-/** 唯一标识符，【必须】  */
+/** 唯一标识符 (每组中必须是唯一的)，【必须】  */
 @property(nonatomic, strong)NSString *reuseIdentifier;
 /** 层  */
 @property(nonatomic, assign)NSInteger zIndex;
 /** 组  */
 @property(nonatomic, assign)NSInteger section;
-/** zIndex用于设置front-to-back层级；值越大，优先布局在上层；cell的zIndex为0   【必须】 */
-@property(nonatomic, strong)UICollectionViewLayoutAttributes *decorationViewLayoutAttributes;
+/** zIndex用于设置front-to-back层级；值越大，优先布局在上层；cell的zIndex为0   */
+@property(nonatomic, strong, readonly)UICollectionViewLayoutAttributes *decorationViewLayoutAttributes;
 
 //这两个属性决定 decorationViewAttributes 的 frame
 /** UIEdgeInsets  */
@@ -28,9 +32,9 @@
 @property(nonatomic, assign)BOOL decorationViewCenter;
 
 //********** 自定义 UICollectionViewLayoutAttributes
-/** <#aaa#>  */
+/** 【可选】，默认UICollectionViewLayoutAttributes  */
 @property Class customLayoutAttributesClass;
-/** <#aaa#>  */
+/** 自定义 customLayoutAttributesClass 添加的属性 */
 @property(nonatomic, strong)NSDictionary *customParams;
 //**********
 
@@ -39,7 +43,7 @@
 /** 水平对齐方式 */
 typedef NS_ENUM(NSInteger, FCCollectionViewItemsHorizontalAlignment){
     FCCollectionViewItemsHorizontalAlignmentFlow,/** 等同  FCCollectionViewItemsHorizontalAlignment */
-    FCCollectionViewItemsHorizontalAlignmentFlowDirection,/** 等同  FCCollectionViewItemsHorizontalAlignment，但最后一行左对齐或右对齐 */
+    FCCollectionViewItemsHorizontalAlignmentFlowDirection,/** 等同  FCCollectionViewItemsHorizontalAlignment，但最后一行左对齐或右对齐(和 FCCollectionViewItemsFlowDirection 有关) */
     FCCollectionViewItemsHorizontalAlignmentFlowFill, /** cell 均分多余部分，使 Cell 间距不变 */
     FCCollectionViewItemsHorizontalAlignmentLeft,/** 左对齐 */
     FCCollectionViewItemsHorizontalAlignmentCenter, /** 居中 */
@@ -88,11 +92,14 @@ typedef NS_ENUM(NSInteger,FCCollectionViewDecorationViewType){
 /** items 的布局方式  */
 @property(nonatomic, assign)FCCollectionViewItemsLayoutType itemsLayoutType;
 
+/** section 之间的间距  */
+@property(nonatomic, assign)CGFloat sectionSpace;
+
 
 //************* 流水布局  *****************/
 
 /** collectionView 分为几列，最小为1；默认2；当  itemsLayoutType ==  FCCollectionViewItemsLayoutTypeWaterFlow 时有效 */
-@property(nonatomic, assign)NSInteger columnNum;
+@property(nonatomic, assign)NSUInteger columnNum;
 
 //***************************************/
 
@@ -132,11 +139,14 @@ typedef NS_ENUM(NSInteger,FCCollectionViewDecorationViewType){
  */
 - (FCCollectionViewItemsLayoutType)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout itemsLayoutTypeAtIndex:(NSInteger)section;
 
+/** section 之间的间距  */
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout sectionSpaceAtIndex:(NSInteger)section;
+
 //************* 流水布局  *****************/
 /**
  collectionView 分为几列，最小为1；默认2；当  itemsLayoutType ==  FCCollectionViewItemsLayoutTypeWaterFlow 时有效
  */
-- (NSInteger)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout columnNumAtIndex:(NSInteger)section;
+- (NSUInteger)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout columnNumAtIndex:(NSInteger)section;
 
 //**********************************************/
 

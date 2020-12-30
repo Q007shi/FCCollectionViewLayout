@@ -7,27 +7,29 @@
 
 #import "FCCollectionViewLayout.h"
 
-/** 记录该组中 items 的布局方向 */
+/** 记录该组中 items 的布局方向的 KEY */
 #define k_Layout_Direction(section) [NSString stringWithFormat:@"k_Layout_Direction_%@",@(section)]
+/** 保存 indexPath 处的 item 的 Frame 的 KEY */
+#define k_CacheItem(indexPath) [NSString stringWithFormat:@"k_CacheItem_%@_%@",@(indexPath.section),@(indexPath.item)]
 
-/** 记录该组中顶部最小值  */
-#define k_Section_Min_Top(section) [NSString stringWithFormat:@"k_WaterLayout_Min_Top_%@",@(section)]
-/** 记录该组中底部最大值  */
-#define k_Section_Max_Bottom(section) [NSString stringWithFormat:@"k_WaterLayout_Max_Bottom_%@",@(section)]
-/** 记录流水布局的 frame */
-#define k_Section_Min_ColumnDatas(section) [NSString stringWithFormat:@"k_Section_Columns_%@",@(section)]
+/** SupplementaryView 的 frame 的 KEY  */
+#define k_Section_SupplementaryView_Frame(kind,section) [NSString stringWithFormat:@"k_Section_%@_Frame_%@",kind,@(section)]
 
 /** 装饰视图 */
 #define k_Section_DecorationMsgs(section) [NSString stringWithFormat:@"k_Section_DecorationMsgs_%@",@(section)]
-#define k_Section_Header_Supplementary_Layout(section) [NSString stringWithFormat:@"k_Section_Header_Supplementary_Layout_%@",@(section)]
-#define k_Section_Footer_Supplementary_Layout(section) [NSString stringWithFormat:@"k_Section_Footer_Supplementary_Layout_%@",@(section)]
 
+@interface FCCollectionViewDecorationViewMessageModel ()
+
+/** zIndex用于设置front-to-back层级；值越大，优先布局在上层；cell的zIndex为0  */
+@property(nonatomic, strong)UICollectionViewLayoutAttributes *decorationViewLayoutAttributes;
+
+@end
 //** 装饰视图信息 **/
 @implementation FCCollectionViewDecorationViewMessageModel
 
 - (UICollectionViewLayoutAttributes *)decorationViewLayoutAttributes{
     if (!_decorationViewLayoutAttributes) {
-        if ([self.reuseIdentifier isKindOfClass:NSString.class] && self.reuseIdentifier.length > 0) {
+        if (self.reuseIdentifier && [self.reuseIdentifier isKindOfClass:NSString.class] && self.reuseIdentifier.length > 0) {
             if (self.customLayoutAttributesClass) {
                 _decorationViewLayoutAttributes = [self.customLayoutAttributesClass layoutAttributesForDecorationViewOfKind:self.reuseIdentifier withIndexPath:[NSIndexPath indexPathForItem:0 inSection:self.section]];
                 _decorationViewLayoutAttributes.zIndex = self.zIndex;
@@ -51,6 +53,11 @@
 
 /** 缓冲Frame  */
 @property(nonatomic, strong)NSMutableDictionary *cachedItemFrame;
+
+/** sectionSpace 造成的内容偏移  */
+@property(nonatomic, strong)NSNumber *sectionSpaceOffsetY;
+/** FCCollectionViewItemsLayoutTypeWaterFlow 流水布局造成的内容偏移  */
+@property(nonatomic, strong)NSNumber *waterFlowOffsetY;
 
 @end
 
@@ -110,6 +117,14 @@
     }
     return self.itemsFlowDirection;
 }
+/** section 之间的间距  */
+- (CGFloat)fc_sectionSpaceAtIndex:(NSInteger)section{
+    if (self.collectionView.delegate && [self.collectionView.delegate respondsToSelector:@selector(collectionView:layout:sectionSpaceAtIndex:)]) {
+        id<FCCollectionViewDelegateFlowLayout> delegate = (id<FCCollectionViewDelegateFlowLayout>)self.collectionView.delegate;
+        return [delegate collectionView:self.collectionView layout:self sectionSpaceAtIndex:section];
+    }
+    return self.sectionSpace;
+}
 
 /**
  items 的布局方式
@@ -133,8 +148,8 @@
     UICollectionViewLayoutAttributes *currentLayoutAttributes = [super layoutAttributesForItemAtIndexPath:indexPath];
     UICollectionViewLayoutAttributes *previousLayoutAttributes = [super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:indexPath.item - 1 inSection:indexPath.section]];
     UIEdgeInsets insets = [self fc_insetForSectionAtIndex:indexPath.section];
-    CGRect currentLineFrame = CGRectMake(insets.left, CGRectGetMinY(currentLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(currentLayoutAttributes.frame));
-    CGRect previousLineFrame = CGRectMake(insets.left, CGRectGetMinY(previousLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(previousLayoutAttributes.frame));
+    CGRect currentLineFrame = CGRectMake(insets.left, CGRectGetMinY(currentLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame) - insets.left - insets.right, CGRectGetHeight(currentLayoutAttributes.frame));
+    CGRect previousLineFrame = CGRectMake(insets.left, CGRectGetMinY(previousLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame) - insets.left - insets.right, CGRectGetHeight(previousLayoutAttributes.frame));
     return !CGRectIntersectsRect(currentLineFrame, previousLineFrame);
 }
 
@@ -197,7 +212,7 @@
     NSArray<UICollectionViewLayoutAttributes *> *layoutAttributes = [self fc_lineAttributes:indexPath];
     CGRect rect = layoutAttributes.firstObject.frame;
     for (UICollectionViewLayoutAttributes *layoutAttri in layoutAttributes) {
-        rect = CGRectIntersection(rect, layoutAttri.frame);
+        rect = CGRectUnion(rect, layoutAttri.frame);
     }
     return rect;
 }
@@ -209,11 +224,11 @@
 
 /** 缓冲 indexPath 处的 frame */
 - (void)fc_cachedItemFrame:(CGRect)frame indexPath:(NSIndexPath *)indexPath{
-    self.cachedItemFrame[indexPath] = @(frame);
+    self.cachedItemFrame[k_CacheItem(indexPath)] = @(frame);
 }
 /** 获取 indexPath 处的 frame */
 - (NSValue *)fc_cachedFrameAtIndexPath:(NSIndexPath *)indexPath{
-    return self.cachedItemFrame[indexPath];
+    return self.cachedItemFrame[k_CacheItem(indexPath)];
 }
 
 /** 重置和缓冲一行Cell 的 Frame */
@@ -234,10 +249,16 @@
             if (horizontalAlignment == FCCollectionViewItemsFlowDirectionL2R2L) {
                 if (directionCachedArr.lastObject.integerValue == FCCollectionViewItemsFlowDirectionL2R) {
                     lineLayoutAttributes = [lineLayoutAttributes reverseObjectEnumerator].allObjects;
+                    [directionCachedArr addObject:@(FCCollectionViewItemsFlowDirectionR2L)];
+                }else{
+                    [directionCachedArr addObject:@(FCCollectionViewItemsFlowDirectionL2R)];
                 }
             }else{
                 if (directionCachedArr.lastObject.integerValue == FCCollectionViewItemsFlowDirectionR2L) {
                     lineLayoutAttributes = [lineLayoutAttributes reverseObjectEnumerator].allObjects;
+                    [directionCachedArr addObject:@(FCCollectionViewItemsFlowDirectionL2R)];
+                }else{
+                    [directionCachedArr addObject:@(FCCollectionViewItemsFlowDirectionR2L)];
                 }
             }
         }else{
@@ -246,7 +267,6 @@
             }else{
                 self.cachedItemFrame[k_Layout_Direction(section)] = [NSMutableArray arrayWithObject:@(FCCollectionViewItemsFlowDirectionR2L)];
             }
-            
         }
     }
     //边距
@@ -408,16 +428,21 @@
                 break;
         }
         //Y 轴
-        CGFloat currentCellOriginY = 0.f;
+        NSInteger currentSection = lineLayoutAttributes[index].indexPath.section;
+        CGFloat currentOffsetY = 0.f;
+        for (NSInteger tempCurrentSection = 0; tempCurrentSection < currentSection; ++tempCurrentSection) {
+            currentOffsetY += [self fc_sectionSpaceAtIndex:tempCurrentSection];
+        }
+        CGFloat currentCellOriginY = currentOffsetY;
         switch (verticalAlignment) {
             case FCCollectionViewItemsVerticalAlignmentBottom:{
-                currentCellOriginY = tempOriginY - CGRectGetHeight(frame);
+                currentCellOriginY += tempOriginY - CGRectGetHeight(frame);
             }break;
             case FCCollectionViewItemsVerticalAlignmentCenter:{
-                currentCellOriginY = frame.origin.y;
+                currentCellOriginY += frame.origin.y;
             }break;
             default:{
-                currentCellOriginY = tempOriginY;
+                currentCellOriginY += tempOriginY;
             }break;
         }
         //
@@ -468,14 +493,9 @@
 }
 /** 初始化 decorationView 的 Frame */
 - (void)fc_setupDecorationViewFrame:(UICollectionViewLayoutAttributes *)sectionLayoutAttributes{
-    if ([sectionLayoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader]) {
-        self.cachedItemFrame[k_Section_Header_Supplementary_Layout(sectionLayoutAttributes.indexPath.section)] = sectionLayoutAttributes;
-    }else if ([sectionLayoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter]){
-        self.cachedItemFrame[k_Section_Footer_Supplementary_Layout(sectionLayoutAttributes.indexPath.section)] = sectionLayoutAttributes;
-    }
-    UICollectionViewLayoutAttributes *sectionHeaderLayoutAttributes = self.cachedItemFrame[k_Section_Header_Supplementary_Layout(sectionLayoutAttributes.indexPath.section)];
-    UICollectionViewLayoutAttributes *sectionFooterLayoutAttributes = self.cachedItemFrame[k_Section_Footer_Supplementary_Layout(sectionLayoutAttributes.indexPath.section)];
-    if (sectionHeaderLayoutAttributes && sectionFooterLayoutAttributes) {
+    NSValue *headerFrameValue = self.cachedItemFrame[k_Section_SupplementaryView_Frame(UICollectionElementKindSectionHeader, sectionLayoutAttributes.indexPath.section)];
+    NSValue *footerFrameValue = self.cachedItemFrame[k_Section_SupplementaryView_Frame(UICollectionElementKindSectionFooter, sectionLayoutAttributes.indexPath.section)];
+    if (headerFrameValue && footerFrameValue) {
         FCCollectionViewDecorationViewType decorationViewType = [self fc_decorationViewTypeAtIndex:sectionLayoutAttributes.indexPath.section];
         NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = [self fc_decorationViewMessagesAtIndex:sectionLayoutAttributes.indexPath.section];
         //
@@ -485,22 +505,22 @@
         CGRect dcViewFrame = CGRectNull;
         //
         if (decorationViewType & FCCollectionViewDecorationViewTypeContainSectionHeaderView && decorationViewType & FCCollectionViewDecorationViewTypeContainSectionFooterView) {
-            dcViewFrame = CGRectUnion(sectionHeaderLayoutAttributes.frame, sectionFooterLayoutAttributes.frame);
+            dcViewFrame = CGRectUnion(headerFrameValue.CGRectValue, footerFrameValue.CGRectValue);
         }else if (decorationViewType & FCCollectionViewDecorationViewTypeContainSectionHeaderView){
             //
-            CGFloat footerViewX = CGRectGetMinX(sectionFooterLayoutAttributes.frame);
-            CGFloat footerViewY = CGRectGetMinY(sectionFooterLayoutAttributes.frame) - sectionEdgeInsets.bottom;
-            CGFloat footerViewW = CGRectGetWidth(sectionFooterLayoutAttributes.frame);
+            CGFloat footerViewX = CGRectGetMinX(footerFrameValue.CGRectValue);
+            CGFloat footerViewY = CGRectGetMinY(footerFrameValue.CGRectValue) - sectionEdgeInsets.bottom;
+            CGFloat footerViewW = CGRectGetWidth(footerFrameValue.CGRectValue);
             CGFloat footerViewH = 0;
-            dcViewFrame = CGRectUnion(sectionHeaderLayoutAttributes.frame, CGRectMake(footerViewX, footerViewY, footerViewW, footerViewH));
+            dcViewFrame = CGRectUnion(headerFrameValue.CGRectValue, CGRectMake(footerViewX, footerViewY, footerViewW, footerViewH));
 
         }else if (decorationViewType & FCCollectionViewDecorationViewTypeContainSectionFooterView){
             //
-                CGFloat headerViewX = CGRectGetMinX(sectionHeaderLayoutAttributes.frame);
-                CGFloat headerViewY = CGRectGetMaxY(sectionHeaderLayoutAttributes.frame) + sectionEdgeInsets.top;
-                CGFloat headerViewW = CGRectGetWidth(sectionHeaderLayoutAttributes.frame);
+                CGFloat headerViewX = CGRectGetMinX(headerFrameValue.CGRectValue);
+                CGFloat headerViewY = CGRectGetMaxY(headerFrameValue.CGRectValue) + sectionEdgeInsets.top;
+                CGFloat headerViewW = CGRectGetWidth(headerFrameValue.CGRectValue);
                 CGFloat headerViewH = 0;
-                dcViewFrame = CGRectUnion(CGRectMake(headerViewX, headerViewY, headerViewW, headerViewH), sectionFooterLayoutAttributes.frame);
+                dcViewFrame = CGRectUnion(CGRectMake(headerViewX, headerViewY, headerViewW, headerViewH), footerFrameValue.CGRectValue);
         }else if (decorationViewType & FCCollectionViewDecorationViewTypeItemsContainer && itemNum > 0){
             for (NSInteger tempItemIndex = 0; tempItemIndex < itemNum; ++tempItemIndex) {
                 UICollectionViewLayoutAttributes *itemLayoutAttributes = [self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:tempItemIndex inSection:section]];
@@ -512,14 +532,14 @@
             }
         }else{
             
-            CGFloat headerViewX = CGRectGetMinX(sectionHeaderLayoutAttributes.frame);
-            CGFloat headerViewY = CGRectGetMaxY(sectionHeaderLayoutAttributes.frame);
-            CGFloat headerViewW = CGRectGetWidth(sectionHeaderLayoutAttributes.frame);
+            CGFloat headerViewX = CGRectGetMinX(headerFrameValue.CGRectValue);
+            CGFloat headerViewY = CGRectGetMaxY(headerFrameValue.CGRectValue);
+            CGFloat headerViewW = CGRectGetWidth(headerFrameValue.CGRectValue);
             CGFloat headerViewH = 0;
             //
-            CGFloat footerViewX = CGRectGetMinX(sectionFooterLayoutAttributes.frame);
-            CGFloat footerViewY = CGRectGetMinY(sectionFooterLayoutAttributes.frame);
-            CGFloat footerViewW = CGRectGetWidth(sectionFooterLayoutAttributes.frame);
+            CGFloat footerViewX = CGRectGetMinX(footerFrameValue.CGRectValue);
+            CGFloat footerViewY = CGRectGetMinY(footerFrameValue.CGRectValue);
+            CGFloat footerViewW = CGRectGetWidth(footerFrameValue.CGRectValue);
             CGFloat footerViewH = 0;
             dcViewFrame = CGRectUnion(CGRectMake(headerViewX, headerViewY, headerViewW, headerViewH), CGRectMake(footerViewX, footerViewY, footerViewW, footerViewH));
             //
@@ -583,6 +603,22 @@
     }
 }
 
+/**
+ 获取 rect 范围内的装饰视图
+ */
+- (NSArray *)fc_decorationViewsWithRect:(CGRect)rect section:(NSInteger)section{
+    NSMutableArray *mArr = NSMutableArray.array;
+    NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = self.cachedItemFrame[k_Section_DecorationMsgs(section)];
+    if ([decorationViewMsgs isKindOfClass:NSArray.class]){
+        for (FCCollectionViewDecorationViewMessageModel *decorationViewMsgM in decorationViewMsgs) {
+            if (CGRectIntersectsRect(rect, decorationViewMsgM.decorationViewLayoutAttributes.frame)) {
+                [mArr addObject:decorationViewMsgM.decorationViewLayoutAttributes];
+            }
+        }
+    }
+    return mArr;
+}
+
 @end
 
 
@@ -596,124 +632,28 @@
 - (void)prepareLayout{
     [super prepareLayout];
     self.cachedItemFrame = @{}.mutableCopy;
-    NSInteger sectionNum = self.collectionView.numberOfSections;
-    if (sectionNum <= 0) return;
-    
-    //
-    UIEdgeInsets contentEdgeInsets = self.collectionView.contentInset;
-    CGFloat collectionViewWidth = CGRectGetWidth(self.collectionView.frame);//CollectionView 的宽度
-    CGFloat cellContainerWidth = collectionViewWidth - contentEdgeInsets.left - contentEdgeInsets.right;//Cell 容器的有效宽度
-    
-//    for (NSInteger section = 0; section < sectionNum; ++section) {
-//        NSInteger itemNum = [self.collectionView numberOfItemsInSection:section];
-//        FCCollectionViewItemsLayoutType itemsLayoutType = [self fc_itemsLayoutTypeAtIndex:section];
-//        //
-//        UICollectionViewLayoutAttributes *headerViewLayoutAttributes = [super layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionHeader atIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
-//        UICollectionViewLayoutAttributes *footerViewLayoutAttributes = [super layoutAttributesForSupplementaryViewOfKind:UICollectionElementKindSectionFooter atIndexPath:[NSIndexPath indexPathForItem:0 inSection:section]];
-//        //
-//        UIEdgeInsets sectionEdgeInsets = [self fc_insetForSectionAtIndex:section];
-//        //
-//        if (itemsLayoutType == FCCollectionViewItemsLayoutTypeFlow) {//普通布局
-//            if (section != 0) {
-//                CGFloat previoutsBottomMaxY = [self.cachedItemFrame[k_Section_Max_Bottom(section-1)] floatValue];
-//                if (previoutsBottomMaxY != CGRectGetMinY(headerViewLayoutAttributes.frame)) {
-//                    CGFloat space = previoutsBottomMaxY - CGRectGetMinY(headerViewLayoutAttributes.frame);
-//                    headerViewLayoutAttributes.frame = CGRectMake(CGRectGetMinX(headerViewLayoutAttributes.frame), previoutsBottomMaxY, CGRectGetWidth(headerViewLayoutAttributes.frame), CGRectGetHeight(headerViewLayoutAttributes.frame));
-//
-//                    for (NSInteger itemIndex = 0; itemIndex < itemNum; ++itemIndex) {
-//                        UICollectionViewLayoutAttributes *itemLayoutAttributes = [super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:itemIndex inSection:section]];
-//                        itemLayoutAttributes.frame = CGRectMake(CGRectGetMinX(itemLayoutAttributes.frame), CGRectGetMinY(itemLayoutAttributes.frame) + space, CGRectGetWidth(itemLayoutAttributes.frame), CGRectGetHeight(itemLayoutAttributes.frame));
-//                    }
-//                    CGFloat tempY = CGRectGetMaxY(headerViewLayoutAttributes.frame) + sectionEdgeInsets.top + sectionEdgeInsets.bottom;
-//                    if (itemNum != 0) {
-//                        CGRect lineRect = [self fc_lineFrame:[NSIndexPath indexPathForItem:itemNum - 1 inSection:section]];
-//                        tempY = CGRectGetMaxY(lineRect) + sectionEdgeInsets.bottom;
-//                    }
-//                    footerViewLayoutAttributes.frame = CGRectMake(CGRectGetMinX(footerViewLayoutAttributes.frame), tempY, CGRectGetWidth(footerViewLayoutAttributes.frame), CGRectGetHeight(footerViewLayoutAttributes.frame));
-//                }
-//            }
-//            self.cachedItemFrame[k_Section_Min_Top(section)] = @(CGRectGetMinY(headerViewLayoutAttributes.frame));
-//            self.cachedItemFrame[k_Section_Max_Bottom(section)] = @(CGRectGetMaxY(footerViewLayoutAttributes.frame));
-//        }else{//流水布局
-//            if (section != 0) {
-//                CGFloat previoutsBottomY = [self.cachedItemFrame[k_Section_Max_Bottom(section-1)] floatValue];
-//                if (previoutsBottomY != CGRectGetMinY(headerViewLayoutAttributes.frame)) {
-//                    headerViewLayoutAttributes.frame = CGRectMake(CGRectGetMinX(headerViewLayoutAttributes.frame), previoutsBottomY, CGRectGetWidth(headerViewLayoutAttributes.frame), CGRectGetHeight(headerViewLayoutAttributes.frame));
-//                }
-//            }
-//
-//            UIEdgeInsets contentEdgeInsets = self.collectionView.contentInset;
-//            //CollectionView 的宽度
-//            CGFloat collectionViewWidth = CGRectGetWidth(self.collectionView.frame);
-//            //Cell 容器的有效宽度
-//            CGFloat cellContainerWidth = collectionViewWidth - contentEdgeInsets.left - contentEdgeInsets.right;
-//            //与滚动方向水平的 item 之间的间距
-//            CGFloat interitemSpacing = [self fc_minimumInteritemSpacingAtIndex:section];
-//            //与滚动方向垂直的 item 之间的间距
-//            CGFloat lineSpacing = [self fc_minimumLineSpacingAtIndex:section];
-//            //
-//            NSInteger columnNum = [self fc_columnNumAtIndex:section];
-//
-//            CGFloat itemWidth = (cellContainerWidth - interitemSpacing * (columnNum - 1) - sectionEdgeInsets.left - sectionEdgeInsets.right)/(columnNum * 1.0);
-//
-//            NSMutableDictionary<NSValue *,NSValue *> *columnMinFrameDic = NSMutableDictionary.dictionary;
-//            for (NSInteger tempColumnIndex = 0; tempColumnIndex < columnNum; ++tempColumnIndex) {
-//                columnMinFrameDic[@(tempColumnIndex)] = @(CGRectMake((itemWidth + interitemSpacing) * tempColumnIndex + sectionEdgeInsets.left, CGRectGetMaxY(headerViewLayoutAttributes.frame) + sectionEdgeInsets.top, itemWidth, 0));
-//            }
-//            CGFloat maxY = CGRectGetMaxY(columnMinFrameDic[@(0)].CGRectValue);
-//            for (NSInteger tempItemIndex = 0; tempItemIndex < itemNum; ++tempItemIndex) {
-//                UICollectionViewLayoutAttributes *itemLayoutAttributes = [super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:tempItemIndex inSection:section]];
-//                CGRect columnMinYFrame = columnMinFrameDic[@(0)].CGRectValue;
-//                NSInteger currentColumn = 0;
-//                CGFloat columnMinY = CGRectGetMaxY(columnMinYFrame);
-//                for (NSInteger tempColumnIndex = 1; tempColumnIndex < columnNum; ++tempColumnIndex) {
-//                    if (CGRectGetMaxY(columnMinFrameDic[@(tempColumnIndex)].CGRectValue) < CGRectGetMaxY(columnMinYFrame)) {
-//                        columnMinYFrame = columnMinFrameDic[@(tempColumnIndex)].CGRectValue;
-//                        columnMinY = CGRectGetMaxY(columnMinYFrame);
-//                        currentColumn = tempColumnIndex;
-//                    }
-//                }
-//                //
-//                if (CGRectGetMinY(columnMinYFrame) != CGRectGetMaxY(headerViewLayoutAttributes.frame) + sectionEdgeInsets.top) {
-//                    columnMinY += lineSpacing;
-//                }
-//                itemLayoutAttributes.frame = CGRectMake(CGRectGetMinX(columnMinYFrame), columnMinY, CGRectGetWidth(columnMinYFrame), CGRectGetHeight(itemLayoutAttributes.frame));
-//                if (maxY < CGRectGetMaxY(itemLayoutAttributes.frame)) {
-//                    maxY = CGRectGetMaxY(itemLayoutAttributes.frame);
-//                }
-//                self.cachedItemFrame[itemLayoutAttributes.indexPath] = @(itemLayoutAttributes.frame);
-//                columnMinFrameDic[@(currentColumn)] = @(itemLayoutAttributes.frame);
-//            }
-//            self.cachedItemFrame[k_Section_Min_ColumnDatas(section)] = columnMinFrameDic;
-//            //
-//            footerViewLayoutAttributes.frame = CGRectMake(CGRectGetMinX(footerViewLayoutAttributes.frame), maxY + sectionEdgeInsets.bottom, CGRectGetWidth(footerViewLayoutAttributes.frame), CGRectGetHeight(footerViewLayoutAttributes.frame));
-//            self.cachedItemFrame[k_Section_Min_Top(section)] = @(CGRectGetMinY(headerViewLayoutAttributes.frame));
-//            self.cachedItemFrame[k_Section_Max_Bottom(section)] = @(CGRectGetMaxY(footerViewLayoutAttributes.frame));
-//        }
-//    }
+    self.sectionSpaceOffsetY = nil;
+    self.waterFlowOffsetY = nil;
 }
 
 - (nullable NSArray<__kindof UICollectionViewLayoutAttributes *> *)layoutAttributesForElementsInRect:(CGRect)rect{
+    //重置有效区域
+    rect.origin.y -= [self.sectionSpaceOffsetY floatValue];
+    rect.size.height += [self.sectionSpaceOffsetY floatValue];
+    //
     NSArray *originalLayoutAttributes = [super layoutAttributesForElementsInRect:rect];
     NSMutableArray *newLayoutAttributes = originalLayoutAttributes.mutableCopy;
     for (UICollectionViewLayoutAttributes *layoutAttributes in originalLayoutAttributes) {
-        if (!layoutAttributes.representedElementKind || layoutAttributes.representedElementCategory == UICollectionElementCategoryCell) {
+        if (!layoutAttributes.representedElementKind && layoutAttributes.representedElementCategory == UICollectionElementCategoryCell) {
             NSInteger newIndex = [newLayoutAttributes indexOfObject:layoutAttributes];
             newLayoutAttributes[newIndex] = [self layoutAttributesForItemAtIndexPath:layoutAttributes.indexPath];
         }else if(layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && ([layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader] || [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter])){
             //
-            [self fc_setupDecorationViewFrame:layoutAttributes];
+            NSInteger newIndex = [newLayoutAttributes indexOfObject:layoutAttributes];
+            newLayoutAttributes[newIndex] = [self layoutAttributesForSupplementaryViewOfKind:layoutAttributes.representedElementKind atIndexPath:layoutAttributes.indexPath];
             //
-            NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = self.cachedItemFrame[k_Section_DecorationMsgs(layoutAttributes.indexPath.section)];
-            if ([decorationViewMsgs isKindOfClass:NSArray.class]){
-                for (FCCollectionViewDecorationViewMessageModel *decorationViewMsgM in decorationViewMsgs) {
-                    if (CGRectIntersectsRect(rect, decorationViewMsgM.decorationViewLayoutAttributes.frame)) {
-                        [newLayoutAttributes addObject:decorationViewMsgM.decorationViewLayoutAttributes];
-                    }
-                }
-            }
+            [newLayoutAttributes addObjectsFromArray:[self fc_decorationViewsWithRect:rect section:layoutAttributes.indexPath.section]];
         }
-        
     }
     return newLayoutAttributes;
 }
@@ -723,36 +663,49 @@
     //获取 indexPath 处 cell 的缓冲Frame
     NSValue *cellFrameValue = [self fc_cachedFrameAtIndexPath:indexPath];
     if (!cellFrameValue) {
-        FCCollectionViewItemsLayoutType layoutType = [self fc_itemsLayoutTypeAtIndex:indexPath.section];
-        if (layoutType == FCCollectionViewItemsLayoutTypeWaterFlow) {//流水布局
-            
-        }else{
-            //是否是一行的第一个元素
-            BOOL isLineStart = [self fc_isLineStartCellAtIndexPath:indexPath];
-            if (isLineStart) {
-                NSArray *line = [self fc_lineAttributes:indexPath];
-                if (line.count > 0) {
-                    [self fc_resetAddCachedCellOfLineLayoutAttributes:line];
-                }
+        //是否是一行的第一个元素
+        BOOL isLineStart = [self fc_isLineStartCellAtIndexPath:indexPath];
+        if (isLineStart) {
+            NSArray *line = [self fc_lineAttributes:indexPath];
+            if (line.count > 0) {
+                [self fc_resetAddCachedCellOfLineLayoutAttributes:line];
             }
-            //获取 indexPath 处 cell 的缓冲Frame
-            cellFrameValue = [self fc_cachedFrameAtIndexPath:indexPath];
         }
+        //获取 indexPath 处 cell 的缓冲Frame
+        cellFrameValue = [self fc_cachedFrameAtIndexPath:indexPath];
     }
     //
     if (cellFrameValue) {
         layoutAttributes.frame = cellFrameValue.CGRectValue;
     }
-    
     return layoutAttributes;
 }
-//- (UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath{
-//    UICollectionViewLayoutAttributes *supplementaryViewLayoutAttributes = [super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath];
-//    //
-//    [self fc_setupDecorationViewFrame:supplementaryViewLayoutAttributes];
-//    //
-//    return supplementaryViewLayoutAttributes;
-//}
+- (UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath{
+    UICollectionViewLayoutAttributes *supplementaryViewLayoutAttributes = [super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath];
+    if (self.cachedItemFrame[k_Section_SupplementaryView_Frame(elementKind, indexPath.section)]) {
+        supplementaryViewLayoutAttributes.frame = [self.cachedItemFrame[k_Section_SupplementaryView_Frame(elementKind, indexPath.section)] CGRectValue];
+    }else{
+        if (indexPath.section != 0 && ([elementKind isEqualToString:UICollectionElementKindSectionHeader] || [elementKind isEqualToString:UICollectionElementKindSectionFooter])) {
+            CGFloat offsetY = 0.f;
+            for (NSInteger tempSection = 0; tempSection < indexPath.section; ++tempSection) {
+                offsetY += [self fc_sectionSpaceAtIndex:tempSection];
+            }
+            CGFloat x = CGRectGetMinX(supplementaryViewLayoutAttributes.frame);
+            CGFloat y = CGRectGetMinY(supplementaryViewLayoutAttributes.frame) + offsetY;
+            CGFloat w = CGRectGetWidth(supplementaryViewLayoutAttributes.frame);
+            CGFloat h = CGRectGetHeight(supplementaryViewLayoutAttributes.frame);
+            supplementaryViewLayoutAttributes.frame = CGRectMake(x, y, w, h);
+        }
+        self.cachedItemFrame[k_Section_SupplementaryView_Frame(elementKind, indexPath.section)] = @(supplementaryViewLayoutAttributes.frame);
+    }
+    //
+    if ([elementKind isEqualToString:UICollectionElementKindSectionHeader] || [elementKind isEqualToString:UICollectionElementKindSectionFooter]) {
+        [self fc_setupDecorationViewFrame:supplementaryViewLayoutAttributes];
+    }
+    //
+    return supplementaryViewLayoutAttributes;
+}
+
 ////装饰视图
 //- (nullable UICollectionViewLayoutAttributes *)layoutAttributesForDecorationViewOfKind:(NSString*)elementKind atIndexPath:(NSIndexPath *)indexPath{
 //    NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = self.cachedItemFrame[k_Section_DecorationMsgs(indexPath.section)];
@@ -768,6 +721,25 @@
 //    }
 //    return [super layoutAttributesForDecorationViewOfKind:elementKind atIndexPath:indexPath];
 //}
+
+- (CGSize)collectionViewContentSize {
+    CGSize size = [super collectionViewContentSize];
+    size.height += [self.sectionSpaceOffsetY floatValue];
+    return size;
+}
+
+- (NSNumber *)sectionSpaceOffsetY{
+    if (!_sectionSpaceOffsetY) {
+        NSInteger sectionNum = self.collectionView.numberOfSections -1;
+        CGFloat offsetY = 0;
+        while (sectionNum > 0) {
+            --sectionNum;
+            offsetY += [self fc_sectionSpaceAtIndex:sectionNum];
+        }
+        _sectionSpaceOffsetY = @(offsetY);
+    }
+    return _sectionSpaceOffsetY;
+}
 
 
 @end

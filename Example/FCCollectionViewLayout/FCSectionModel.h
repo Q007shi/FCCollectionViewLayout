@@ -22,6 +22,8 @@
 
 /** <#aaa#>  */
 @property(nonatomic, assign)FCCollectionViewItemsFlowDirection flowDirection;
+/** <#aaa#>  */
+@property(nonatomic, assign)CGFloat sectionSpace;
 
 /** <#aaa#>  */
 @property(nonatomic, assign)NSInteger columnNum;

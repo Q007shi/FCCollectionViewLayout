@@ -479,15 +479,17 @@
 
 /** 装饰视图显示方式 */
 - (FCCollectionViewDecorationViewType)fc_decorationViewTypeAtIndex:(NSInteger)section{
-    if (self.decorationViewDelegate && [self.decorationViewDelegate respondsToSelector:@selector(collectionView:layout:decorationViewTypeAtIndex:)]) {
-        return [self.decorationViewDelegate collectionView:self.collectionView layout:self decorationViewTypeAtIndex:section];
+    if (self.collectionView.delegate && [self.collectionView.delegate respondsToSelector:@selector(collectionView:layout:decorationViewTypeAtIndex:)]) {
+        id<FCCollectionViewDelegateFlowLayout> delegate = (id<FCCollectionViewDelegateFlowLayout>)self.collectionView.delegate;
+        return [delegate collectionView:self.collectionView layout:self decorationViewTypeAtIndex:section];
     }
     return self.decorationViewType;
 }
 /** 装饰视图信息 */
 - (NSArray<FCCollectionViewDecorationViewMessageModel *> *)fc_decorationViewMessagesAtIndex:(NSInteger)section{
-    if (self.decorationViewDelegate && [self.decorationViewDelegate respondsToSelector:@selector(collectionView:layout:decorationViewMessagesAtIndex:)]) {
-        return [self.decorationViewDelegate collectionView:self.collectionView layout:self decorationViewMessagesAtIndex:section];
+    if (self.collectionView.delegate && [self.collectionView.delegate respondsToSelector:@selector(collectionView:layout:decorationViewTypeAtIndex:)]) {
+        id<FCCollectionViewDelegateFlowLayout> delegate = (id<FCCollectionViewDelegateFlowLayout>)self.collectionView.delegate;
+        return [delegate collectionView:self.collectionView layout:self decorationViewMessagesAtIndex:section];
     }
     return self.decorationViewMessages;
 }

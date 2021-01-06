@@ -16,7 +16,7 @@
 #import "FCCollectionReusableView_One.h"
 #import "FCCollectionViewLayoutAttributes.h"
 
-@interface FCViewController ()<UICollectionViewDataSource,UICollectionViewDelegate,FCCollectionViewDelegateFlowLayout,FCCollectionViewLayoutDecorationViewDelegate>{
+@interface FCViewController ()<UICollectionViewDataSource,UICollectionViewDelegate,FCCollectionViewDelegateFlowLayout>{
     CFDictionaryRef _dicRef;
     id obj;
     
@@ -197,7 +197,7 @@
     if (!_flowLayout) {
         _flowLayout = FCCollectionViewLayout.new;
         _flowLayout.estimatedItemSize = CGSizeMake(100, 50);
-        _flowLayout.decorationViewDelegate = self;
+//        _flowLayout.decorationViewDelegate = self;
 //        _flowLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
 //        _flowLayout.itemSize = CGSizeMake(100, 50);
 //        _flowLayout.headerReferenceSize = CGSizeMake(100, 100);

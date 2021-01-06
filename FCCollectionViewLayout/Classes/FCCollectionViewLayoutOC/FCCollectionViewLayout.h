@@ -106,7 +106,7 @@ typedef NS_ENUM(NSInteger,FCCollectionViewDecorationViewType){
 //************* 装饰视图  *****************/
 
 /** 装饰视图的代理  */
-@property(nonatomic, weak)id<FCCollectionViewLayoutDecorationViewDelegate> decorationViewDelegate;
+//@property(nonatomic, weak)id<FCCollectionViewLayoutDecorationViewDelegate> decorationViewDelegate;
 /** DecorationView 的显示方式  */
 @property(nonatomic, assign)FCCollectionViewDecorationViewType decorationViewType;
 /** 装饰视图信息 */
@@ -154,17 +154,9 @@ typedef NS_ENUM(NSInteger,FCCollectionViewDecorationViewType){
 
 - (FCCollectionViewDecorationViewType)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout decorationViewTypeAtIndex:(NSInteger)section;
 
-//****************************************/
-
-@end
-
-//**** 装饰视图 ***/
-@protocol FCCollectionViewLayoutDecorationViewDelegate <NSObject>
-
-/** 装饰视图显示方式 */
-- (FCCollectionViewDecorationViewType)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout decorationViewTypeAtIndex:(NSInteger)section;
-
 /** 装饰视图信息 */
 - (NSArray<FCCollectionViewDecorationViewMessageModel *> *)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout decorationViewMessagesAtIndex:(NSInteger)section;
+
+//****************************************/
 
 @end

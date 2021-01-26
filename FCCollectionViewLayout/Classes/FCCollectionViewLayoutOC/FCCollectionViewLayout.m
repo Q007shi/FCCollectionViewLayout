@@ -487,11 +487,17 @@
 }
 /** 装饰视图信息 */
 - (NSArray<FCCollectionViewDecorationViewMessageModel *> *)fc_decorationViewMessagesAtIndex:(NSInteger)section{
+    NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMessages = self.decorationViewMessages;
     if (self.collectionView.delegate && [self.collectionView.delegate respondsToSelector:@selector(collectionView:layout:decorationViewTypeAtIndex:)]) {
         id<FCCollectionViewDelegateFlowLayout> delegate = (id<FCCollectionViewDelegateFlowLayout>)self.collectionView.delegate;
-        return [delegate collectionView:self.collectionView layout:self decorationViewMessagesAtIndex:section];
+        decorationViewMessages = [delegate collectionView:self.collectionView layout:self decorationViewMessagesAtIndex:section];
     }
-    return self.decorationViewMessages;
+    if (decorationViewMessages && [decorationViewMessages isKindOfClass:NSArray.class]) {
+        for (FCCollectionViewDecorationViewMessageModel *msgM in decorationViewMessages) {
+            msgM.section = section;
+        }
+    }
+    return decorationViewMessages;
 }
 /** 初始化 decorationView 的 Frame */
 - (void)fc_setupDecorationViewFrame:(UICollectionViewLayoutAttributes *)sectionLayoutAttributes{

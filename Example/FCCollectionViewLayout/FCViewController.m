@@ -166,13 +166,13 @@
 
 /** 装饰视图信息 */
 - (NSArray<FCCollectionViewDecorationViewMessageModel *> *)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout decorationViewMessagesAtIndex:(NSInteger)section{
-    NSArray *arr = self.datas[section].decorationViewMessages;
-    if ([arr isKindOfClass:NSArray.class]) {
-        for (FCCollectionViewDecorationViewMessageModel *dmM in arr) {
-            dmM.section = section;
-        }
-    }
-    return arr;
+//    NSArray *arr = self.datas[section].decorationViewMessages;
+//    if ([arr isKindOfClass:NSArray.class]) {
+//        for (FCCollectionViewDecorationViewMessageModel *dmM in arr) {
+//            dmM.section = section;
+//        }
+//    }
+    return self.datas[section].decorationViewMessages;
 }
 
 #pragma mark - edgeInset

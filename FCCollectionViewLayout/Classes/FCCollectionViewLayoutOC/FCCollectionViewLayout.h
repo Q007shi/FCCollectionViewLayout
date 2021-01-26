@@ -79,7 +79,6 @@ typedef NS_ENUM(NSInteger,FCCollectionViewDecorationViewType){
     FCCollectionViewDecorationViewTypeContainSectionFooterView = 1 << 3,//包含 SectionFooterView(注意：zIndex = 10)。二进制：1000；十进制：8
 };
 
-@protocol FCCollectionViewLayoutDecorationViewDelegate;
 @interface FCCollectionViewLayout : UICollectionViewFlowLayout
 
 /** 水平对齐方式  */
@@ -104,9 +103,6 @@ typedef NS_ENUM(NSInteger,FCCollectionViewDecorationViewType){
 //***************************************/
 
 //************* 装饰视图  *****************/
-
-/** 装饰视图的代理  */
-//@property(nonatomic, weak)id<FCCollectionViewLayoutDecorationViewDelegate> decorationViewDelegate;
 /** DecorationView 的显示方式  */
 @property(nonatomic, assign)FCCollectionViewDecorationViewType decorationViewType;
 /** 装饰视图信息 */

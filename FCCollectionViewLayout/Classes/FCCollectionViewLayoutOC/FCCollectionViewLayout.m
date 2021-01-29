@@ -19,29 +19,6 @@
 /** 装饰视图 */
 #define k_Section_DecorationMsgs(section) [NSString stringWithFormat:@"k_Section_DecorationMsgs_%@",@(section)]
 
-#define fc_float( value ) ({\
-double remainder = 0;\
-double integerNum = 0;\
-remainder = modf(-10.2, &integerNum);\
-CGFloat num = 0;\
-if (remainder > 0) {\
-    if (remainder > 0.5) {\
-num = integerNum + 1;\
-    }else{\
-num = integerNum + 0.5;\
-    }\
-}else if(remainder < 0){\
-    if (remainder <= -0.5) {\
-num = integerNum - 0.5;\
-    }else{\
-num = integerNum;\
-    }\
-}else{\
-num = integerNum;\
-}\
-value;\
-})
-
 @interface FCCollectionViewDecorationViewMessageModel ()
 
 /** zIndex用于设置front-to-back层级；值越大，优先布局在上层；cell的zIndex为0  */
@@ -172,8 +149,8 @@ value;\
     UICollectionViewLayoutAttributes *currentLayoutAttributes = [super layoutAttributesForItemAtIndexPath:indexPath];
     UICollectionViewLayoutAttributes *previousLayoutAttributes = [super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:indexPath.item - 1 inSection:indexPath.section]];
     UIEdgeInsets insets = [self fc_insetForSectionAtIndex:indexPath.section];
-    CGRect currentLineFrame = CGRectMake(fc_float(insets.left), fc_float(CGRectGetMinY(currentLayoutAttributes.frame)), fc_float(CGRectGetWidth(self.collectionView.frame) - insets.left - insets.right), fc_float(CGRectGetHeight(currentLayoutAttributes.frame)));
-    CGRect previousLineFrame = CGRectMake(fc_float(insets.left), fc_float(CGRectGetMinY(previousLayoutAttributes.frame)), fc_float(CGRectGetWidth(self.collectionView.frame) - insets.left - insets.right), fc_float(CGRectGetHeight(previousLayoutAttributes.frame)));
+    CGRect currentLineFrame = CGRectMake(insets.left, CGRectGetMinY(currentLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame) - insets.left - insets.right, CGRectGetHeight(currentLayoutAttributes.frame));
+    CGRect previousLineFrame = CGRectMake(insets.left, CGRectGetMinY(previousLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame) - insets.left - insets.right, CGRectGetHeight(previousLayoutAttributes.frame));
     return !CGRectIntersectsRect(currentLineFrame, previousLineFrame);
 }
 
@@ -183,8 +160,8 @@ value;\
     UICollectionViewLayoutAttributes *currentLayoutAttributes = [super layoutAttributesForItemAtIndexPath:indexPath];
     UICollectionViewLayoutAttributes *previousLayoutAttributes = [super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:indexPath.item - 1 inSection:indexPath.section]];
     UIEdgeInsets insets = [self fc_insetForSectionAtIndex:indexPath.section];
-    CGRect currentLineFrame = CGRectMake(fc_float(insets.left), fc_float(CGRectGetMinY(currentLayoutAttributes.frame)), fc_float(CGRectGetWidth(self.collectionView.frame)), fc_float(CGRectGetHeight(currentLayoutAttributes.frame)));
-    CGRect previousLineFrame = CGRectMake(fc_float(insets.left), fc_float(CGRectGetMinY(previousLayoutAttributes.frame)), fc_float(CGRectGetWidth(self.collectionView.frame)), fc_float(CGRectGetHeight(previousLayoutAttributes.frame)));
+    CGRect currentLineFrame = CGRectMake(insets.left, CGRectGetMinY(currentLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(currentLayoutAttributes.frame));
+    CGRect previousLineFrame = CGRectMake(insets.left, CGRectGetMinY(previousLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(previousLayoutAttributes.frame));
     return CGRectIntersectsRect(currentLineFrame, previousLineFrame);
 }
 
@@ -195,8 +172,8 @@ value;\
     UIEdgeInsets insets = [self fc_insetForSectionAtIndex:indexPath.section];
     UICollectionViewLayoutAttributes *currentLayoutAttributes = [super layoutAttributesForItemAtIndexPath:indexPath];
     UICollectionViewLayoutAttributes *nextLayoutAttributes = [super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:indexPath.item+1 inSection:indexPath.section]];
-    CGRect currentLineFrame = CGRectMake(fc_float(insets.left), fc_float(CGRectGetMinY(currentLayoutAttributes.frame)), fc_float(CGRectGetWidth(self.collectionView.frame)), fc_float(CGRectGetHeight(currentLayoutAttributes.frame)));
-    CGRect nextLineFrame = CGRectMake(fc_float(insets.left), fc_float(CGRectGetMinY(nextLayoutAttributes.frame)), fc_float(CGRectGetWidth(self.collectionView.frame)), fc_float(CGRectGetHeight(nextLayoutAttributes.frame)));
+    CGRect currentLineFrame = CGRectMake(insets.left, CGRectGetMinY(currentLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(currentLayoutAttributes.frame));
+    CGRect nextLineFrame = CGRectMake(insets.left, CGRectGetMinY(nextLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(nextLayoutAttributes.frame));
     return CGRectIntersectsRect(currentLineFrame, nextLineFrame);
 }
 

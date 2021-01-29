@@ -68,7 +68,6 @@
     NSLog(@"obj1 %@",obj);
     
     
-    
 }
 - (void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];

@@ -18,6 +18,8 @@
 
 /** 装饰视图 */
 #define k_Section_DecorationMsgs(section) [NSString stringWithFormat:@"k_Section_DecorationMsgs_%@",@(section)]
+/** 装饰视图原 Frame */
+#define k_Section_DecorationViewFrame( section ) [NSString stringWithFormat:@"k_Section_DecorationViewFrame_%@",@(section)]
 
 @interface FCCollectionViewDecorationViewMessageModel ()
 
@@ -429,12 +431,7 @@
                 break;
         }
         //Y 轴
-        NSInteger currentSection = lineLayoutAttributes[index].indexPath.section;
-        CGFloat currentOffsetY = 0.f;
-        for (NSInteger tempCurrentSection = 0; tempCurrentSection < currentSection; ++tempCurrentSection) {
-            currentOffsetY += [self fc_sectionSpaceAtIndex:tempCurrentSection];
-        }
-        CGFloat currentCellOriginY = currentOffsetY;
+        CGFloat currentCellOriginY = 0.f;
         switch (verticalAlignment) {
             case FCCollectionViewItemsVerticalAlignmentBottom:{
                 currentCellOriginY += tempOriginY - CGRectGetHeight(frame);
@@ -500,73 +497,47 @@
     }
     return decorationViewMessages;
 }
-/** 初始化 decorationView 的 Frame */
-- (void)fc_setupDecorationViewFrame:(UICollectionViewLayoutAttributes *)sectionLayoutAttributes{
-    NSValue *headerFrameValue = self.cachedItemFrame[k_Section_SupplementaryView_Frame(UICollectionElementKindSectionHeader, sectionLayoutAttributes.indexPath.section)];
-    NSValue *footerFrameValue = self.cachedItemFrame[k_Section_SupplementaryView_Frame(UICollectionElementKindSectionFooter, sectionLayoutAttributes.indexPath.section)];
-    if (headerFrameValue && footerFrameValue) {
-        FCCollectionViewDecorationViewType decorationViewType = [self fc_decorationViewTypeAtIndex:sectionLayoutAttributes.indexPath.section];
-        NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = [self fc_decorationViewMessagesAtIndex:sectionLayoutAttributes.indexPath.section];
-        //
-        NSInteger section = sectionLayoutAttributes.indexPath.section;
-        UIEdgeInsets sectionEdgeInsets = [self fc_insetForSectionAtIndex:section];
-        NSInteger itemNum = [self.collectionView numberOfItemsInSection:section];
-        CGRect dcViewFrame = CGRectNull;
-        //
-        if (decorationViewType & FCCollectionViewDecorationViewTypeContainSectionHeaderView && decorationViewType & FCCollectionViewDecorationViewTypeContainSectionFooterView) {
-            dcViewFrame = CGRectUnion(headerFrameValue.CGRectValue, footerFrameValue.CGRectValue);
-        }else if (decorationViewType & FCCollectionViewDecorationViewTypeContainSectionHeaderView){
-            //
-            CGFloat footerViewX = CGRectGetMinX(footerFrameValue.CGRectValue);
-            CGFloat footerViewY = CGRectGetMinY(footerFrameValue.CGRectValue) - sectionEdgeInsets.bottom;
-            CGFloat footerViewW = CGRectGetWidth(footerFrameValue.CGRectValue);
-            CGFloat footerViewH = 0;
-            dcViewFrame = CGRectUnion(headerFrameValue.CGRectValue, CGRectMake(footerViewX, footerViewY, footerViewW, footerViewH));
-
-        }else if (decorationViewType & FCCollectionViewDecorationViewTypeContainSectionFooterView){
-            //
-                CGFloat headerViewX = CGRectGetMinX(headerFrameValue.CGRectValue);
-                CGFloat headerViewY = CGRectGetMaxY(headerFrameValue.CGRectValue) + sectionEdgeInsets.top;
-                CGFloat headerViewW = CGRectGetWidth(headerFrameValue.CGRectValue);
-                CGFloat headerViewH = 0;
-                dcViewFrame = CGRectUnion(CGRectMake(headerViewX, headerViewY, headerViewW, headerViewH), footerFrameValue.CGRectValue);
-        }else if (decorationViewType & FCCollectionViewDecorationViewTypeItemsContainer && itemNum > 0){
-            for (NSInteger tempItemIndex = 0; tempItemIndex < itemNum; ++tempItemIndex) {
-                UICollectionViewLayoutAttributes *itemLayoutAttributes = [self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:tempItemIndex inSection:section]];
-                if (CGRectIsNull(dcViewFrame)) {
-                    dcViewFrame = itemLayoutAttributes.frame;
-                }else{
-                    dcViewFrame = CGRectUnion(dcViewFrame, itemLayoutAttributes.frame);
-                }
-            }
-        }else{
-            
-            CGFloat headerViewX = CGRectGetMinX(headerFrameValue.CGRectValue);
-            CGFloat headerViewY = CGRectGetMaxY(headerFrameValue.CGRectValue);
-            CGFloat headerViewW = CGRectGetWidth(headerFrameValue.CGRectValue);
-            CGFloat headerViewH = 0;
-            //
-            CGFloat footerViewX = CGRectGetMinX(footerFrameValue.CGRectValue);
-            CGFloat footerViewY = CGRectGetMinY(footerFrameValue.CGRectValue);
-            CGFloat footerViewW = CGRectGetWidth(footerFrameValue.CGRectValue);
-            CGFloat footerViewH = 0;
-            dcViewFrame = CGRectUnion(CGRectMake(headerViewX, headerViewY, headerViewW, headerViewH), CGRectMake(footerViewX, footerViewY, footerViewW, footerViewH));
-            //
-            CGFloat x = CGRectGetMinX(dcViewFrame) + sectionEdgeInsets.left;
-            CGFloat y = CGRectGetMinY(dcViewFrame) + sectionEdgeInsets.top;
-            CGFloat w = CGRectGetWidth(dcViewFrame) - sectionEdgeInsets.left - sectionEdgeInsets.right;
-            CGFloat h = CGRectGetHeight(dcViewFrame) - sectionEdgeInsets.top - sectionEdgeInsets.bottom;
-            dcViewFrame = CGRectMake(x, y, w, h);
+//MARK:  求 DecorationView 的 frame =  item 和 headerView、footerView Frame的交集
+- (void)fc_decorationViewFrameWithUnion:(UICollectionViewLayoutAttributes *)layoutAttributes{
+    if (layoutAttributes.representedElementCategory == UICollectionElementCategoryDecorationView)   return;
+    //
+    if (layoutAttributes.representedElementCategory == UICollectionElementCategoryCell || (layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && ([layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader] || [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter]))) {
+        CGFloat offsetY = 0.f;
+        for (NSInteger tempSection = 0; tempSection < layoutAttributes.indexPath.section; ++tempSection) {
+            offsetY += [self fc_sectionSpaceAtIndex:tempSection];
         }
-        if (!CGRectIsNull(dcViewFrame)) {
-            for (FCCollectionViewDecorationViewMessageModel *dcViewMsgM in decorationViewMsgs) {
-                dcViewMsgM.decorationViewLayoutAttributes.frame = dcViewFrame;
-            }
-            self.cachedItemFrame[k_Section_DecorationMsgs(section)] = decorationViewMsgs;
-        }
-        //根据 edgeInsets 修改 decorationViewFrame
-        [self fc_resetDecorationViewFrameAtIndex:section];
+        layoutAttributes.frame = CGRectOffset(layoutAttributes.frame, 0, offsetY);
     }
+    NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = [self fc_decorationViewMessagesAtIndex:layoutAttributes.indexPath.section];
+    if (decorationViewMsgs == nil || ![decorationViewMsgs isKindOfClass:NSArray.class] || decorationViewMsgs.count == 0) return;
+    
+    //是否包含组头或组尾
+    FCCollectionViewDecorationViewType decorationViewType = [self fc_decorationViewTypeAtIndex:layoutAttributes.indexPath.section];
+    //不包含组头
+    if (((decorationViewType & FCCollectionViewDecorationViewTypeContainSectionHeaderView) == NO && layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader])) {
+        return;
+    }
+    //不包含组尾
+    if (((decorationViewType & FCCollectionViewDecorationViewTypeContainSectionFooterView) == NO && layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter])) {
+        return;
+    }
+    NSValue *decorationViewFrameValue = self.cachedItemFrame[k_Section_DecorationViewFrame(layoutAttributes.indexPath.section)];
+    if (decorationViewFrameValue == nil) {
+        decorationViewFrameValue = @(layoutAttributes.frame);
+    }else{
+        decorationViewFrameValue = @(CGRectUnion(decorationViewFrameValue.CGRectValue, layoutAttributes.frame));
+    }
+    //CollectionView 的有效宽度
+    if (decorationViewType & FCCollectionViewDecorationViewTypeValidWidth) {
+        CGRect tempRect = CGRectMake(0, decorationViewFrameValue.CGRectValue.origin.y, CGRectGetWidth(self.collectionView.frame), decorationViewFrameValue.CGRectValue.size.height);
+        decorationViewFrameValue = @(CGRectUnion(decorationViewFrameValue.CGRectValue, tempRect));
+    }
+    self.cachedItemFrame[k_Section_DecorationViewFrame(layoutAttributes.indexPath.section)] = decorationViewFrameValue;
+    //
+    for (FCCollectionViewDecorationViewMessageModel *dcViewMsgM in decorationViewMsgs) {
+        dcViewMsgM.decorationViewLayoutAttributes.frame = decorationViewFrameValue.CGRectValue;
+    }
+    self.cachedItemFrame[k_Section_DecorationMsgs(layoutAttributes.indexPath.section)] = decorationViewMsgs;
 }
 
 /** 根据 edgeInsets 修改 decorationViewFrame */
@@ -652,18 +623,28 @@
     //
     NSArray *originalLayoutAttributes = [super layoutAttributesForElementsInRect:rect];
     NSMutableArray *newLayoutAttributes = originalLayoutAttributes.mutableCopy;
+    
+    NSMutableSet *sectionSet = NSMutableSet.set;
+    
     for (UICollectionViewLayoutAttributes *layoutAttributes in originalLayoutAttributes) {
+        //
         if (!layoutAttributes.representedElementKind && layoutAttributes.representedElementCategory == UICollectionElementCategoryCell) {
             NSInteger newIndex = [newLayoutAttributes indexOfObject:layoutAttributes];
             newLayoutAttributes[newIndex] = [self layoutAttributesForItemAtIndexPath:layoutAttributes.indexPath];
-        }else if(layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && ([layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader] || [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter])){
-            //
-            NSInteger newIndex = [newLayoutAttributes indexOfObject:layoutAttributes];
-            newLayoutAttributes[newIndex] = [self layoutAttributesForSupplementaryViewOfKind:layoutAttributes.representedElementKind atIndexPath:layoutAttributes.indexPath];
-            //
-            [newLayoutAttributes addObjectsFromArray:[self fc_decorationViewsWithRect:rect section:layoutAttributes.indexPath.section]];
         }
+        //
+        [sectionSet addObject:@(layoutAttributes.indexPath.section)];
     }
+    //
+    for (UICollectionViewLayoutAttributes *layoutAttributes in newLayoutAttributes) {
+        [self fc_decorationViewFrameWithUnion:layoutAttributes];
+    }
+    //DecorationView 处理
+    for (NSNumber *section in sectionSet) {
+        [newLayoutAttributes addObjectsFromArray:[self fc_decorationViewsWithRect:rect section:[section integerValue]]];
+        [self fc_resetDecorationViewFrameAtIndex:[section integerValue]];
+    }
+    
     return newLayoutAttributes;
 }
 
@@ -689,47 +670,6 @@
     }
     return layoutAttributes;
 }
-- (UICollectionViewLayoutAttributes *)layoutAttributesForSupplementaryViewOfKind:(NSString *)elementKind atIndexPath:(NSIndexPath *)indexPath{
-    UICollectionViewLayoutAttributes *supplementaryViewLayoutAttributes = [super layoutAttributesForSupplementaryViewOfKind:elementKind atIndexPath:indexPath];
-    if (self.cachedItemFrame[k_Section_SupplementaryView_Frame(elementKind, indexPath.section)]) {
-        supplementaryViewLayoutAttributes.frame = [self.cachedItemFrame[k_Section_SupplementaryView_Frame(elementKind, indexPath.section)] CGRectValue];
-    }else{
-        if (indexPath.section != 0 && ([elementKind isEqualToString:UICollectionElementKindSectionHeader] || [elementKind isEqualToString:UICollectionElementKindSectionFooter])) {
-            CGFloat offsetY = 0.f;
-            for (NSInteger tempSection = 0; tempSection < indexPath.section; ++tempSection) {
-                offsetY += [self fc_sectionSpaceAtIndex:tempSection];
-            }
-            CGFloat x = CGRectGetMinX(supplementaryViewLayoutAttributes.frame);
-            CGFloat y = CGRectGetMinY(supplementaryViewLayoutAttributes.frame) + offsetY;
-            CGFloat w = CGRectGetWidth(supplementaryViewLayoutAttributes.frame);
-            CGFloat h = CGRectGetHeight(supplementaryViewLayoutAttributes.frame);
-            supplementaryViewLayoutAttributes.frame = CGRectMake(x, y, w, h);
-        }
-        self.cachedItemFrame[k_Section_SupplementaryView_Frame(elementKind, indexPath.section)] = @(supplementaryViewLayoutAttributes.frame);
-    }
-    //
-    if ([elementKind isEqualToString:UICollectionElementKindSectionHeader] || [elementKind isEqualToString:UICollectionElementKindSectionFooter]) {
-        [self fc_setupDecorationViewFrame:supplementaryViewLayoutAttributes];
-    }
-    //
-    return supplementaryViewLayoutAttributes;
-}
-
-////装饰视图
-//- (nullable UICollectionViewLayoutAttributes *)layoutAttributesForDecorationViewOfKind:(NSString*)elementKind atIndexPath:(NSIndexPath *)indexPath{
-//    NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = self.cachedItemFrame[k_Section_DecorationMsgs(indexPath.section)];
-//    if ([decorationViewMsgs isKindOfClass:NSArray.class]){
-//        //
-////        [self fc_resetDecorationViewFrameAtIndex:indexPath.section];
-//        //
-//        for (FCCollectionViewDecorationViewMessageModel *decorationViewMsgM in decorationViewMsgs) {
-//            if ([decorationViewMsgM.reuseIdentifier isEqualToString:elementKind]) {
-//                return decorationViewMsgM.decorationViewLayoutAttributes;
-//            }
-//        }
-//    }
-//    return [super layoutAttributesForDecorationViewOfKind:elementKind atIndexPath:indexPath];
-//}
 
 - (CGSize)collectionViewContentSize {
     CGSize size = [super collectionViewContentSize];

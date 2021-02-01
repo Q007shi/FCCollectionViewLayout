@@ -147,9 +147,9 @@
     return self.datas[section].layoutType;
 }
 /** section 之间的间距  */
-- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout sectionSpaceAtIndex:(NSInteger)section{
-    return self.datas[section].sectionSpace;
-}
+//- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewFlowLayout *)layout sectionSpaceAtIndex:(NSInteger)section{
+//    return self.datas[section].sectionSpace;
+//}
 
 /**
  collectionView 分为几列，最小为1；默认2；当  itemsLayoutType ==  FCCollectionViewItemsLayoutTypeWaterFlow 时有效
@@ -197,6 +197,7 @@
     if (!_flowLayout) {
         _flowLayout = FCCollectionViewLayout.new;
         _flowLayout.estimatedItemSize = CGSizeMake(100, 50);
+        _flowLayout.sectionSpace = 50;
 //        _flowLayout.decorationViewDelegate = self;
 //        _flowLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
 //        _flowLayout.itemSize = CGSizeMake(100, 50);

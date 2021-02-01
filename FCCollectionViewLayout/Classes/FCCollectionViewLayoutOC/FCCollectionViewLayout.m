@@ -500,14 +500,6 @@
 //MARK:  求 DecorationView 的 frame =  item 和 headerView、footerView Frame的交集
 - (void)fc_decorationViewFrameWithUnion:(UICollectionViewLayoutAttributes *)layoutAttributes{
     if (layoutAttributes.representedElementCategory == UICollectionElementCategoryDecorationView)   return;
-    //
-    if (layoutAttributes.representedElementCategory == UICollectionElementCategoryCell || (layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && ([layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader] || [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter]))) {
-        CGFloat offsetY = 0.f;
-        for (NSInteger tempSection = 0; tempSection < layoutAttributes.indexPath.section; ++tempSection) {
-            offsetY += [self fc_sectionSpaceAtIndex:tempSection];
-        }
-        layoutAttributes.frame = CGRectOffset(layoutAttributes.frame, 0, offsetY);
-    }
     NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = [self fc_decorationViewMessagesAtIndex:layoutAttributes.indexPath.section];
     if (decorationViewMsgs == nil || ![decorationViewMsgs isKindOfClass:NSArray.class] || decorationViewMsgs.count == 0) return;
     
@@ -637,6 +629,17 @@
     }
     //
     for (UICollectionViewLayoutAttributes *layoutAttributes in newLayoutAttributes) {
+        //
+        if (layoutAttributes.representedElementCategory == UICollectionElementCategoryCell || (layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && ([layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader] || [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter]))) {
+            if (layoutAttributes.indexPath.section != 0) {
+                CGFloat offsetY = 0.f;
+                for (NSInteger tempSection = 0; tempSection <= layoutAttributes.indexPath.section; ++tempSection) {
+                    offsetY += [self fc_sectionSpaceAtIndex:tempSection];
+                }
+                layoutAttributes.frame = CGRectOffset(layoutAttributes.frame, 0, offsetY);
+            }
+        }
+        //
         [self fc_decorationViewFrameWithUnion:layoutAttributes];
     }
     //DecorationView 处理
@@ -644,7 +647,6 @@
         [newLayoutAttributes addObjectsFromArray:[self fc_decorationViewsWithRect:rect section:[section integerValue]]];
         [self fc_resetDecorationViewFrameAtIndex:[section integerValue]];
     }
-    
     return newLayoutAttributes;
 }
 

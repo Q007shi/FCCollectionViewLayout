@@ -13,7 +13,8 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     
-    
+    CGFloat f = 71.4124256456323;
+    NSLog(@"%lf",f/3.0);
     return YES;
 }
 

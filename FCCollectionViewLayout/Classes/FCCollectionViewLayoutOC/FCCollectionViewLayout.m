@@ -25,6 +25,8 @@
 
 /** zIndex用于设置front-to-back层级；值越大，优先布局在上层；cell的zIndex为0  */
 @property(nonatomic, strong)UICollectionViewLayoutAttributes *decorationViewLayoutAttributes;
+/** 组  */
+@property(nonatomic, assign)NSInteger section;
 
 @end
 //** 装饰视图信息 **/

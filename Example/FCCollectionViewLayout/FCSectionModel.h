@@ -36,6 +36,9 @@
 /** 装饰视图信息 */
 @property(nonatomic, strong)NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMessages;
 
+
+@property(nonatomic, assign)BOOL open;
+
 @end
 
 @interface FCItemModel : TBCollectionViewItemModel

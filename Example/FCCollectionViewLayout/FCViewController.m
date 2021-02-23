@@ -80,6 +80,11 @@
     return self.datas.count;
 }
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section{
+    if (self.datas[section].items.count > 10) {
+        if (!self.datas[section].open) {
+            return 1;
+        }
+    }
     return self.datas[section].items.count;
 }
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath{
@@ -173,6 +178,11 @@
 //        }
 //    }
     return self.datas[section].decorationViewMessages;
+}
+
+- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath{
+    self.datas[indexPath.section].open = !self.datas[indexPath.section].open;
+    [collectionView reloadData];
 }
 
 #pragma mark - edgeInset
@@ -287,6 +297,9 @@
         sm.columnNum = 2;
         //
         sm.sectionSpace = 20;
+//        sm.open = YES;
+        //
+        sm.decorationViewType = FCCollectionViewDecorationViewTypeContainSectionFooterView;
         //
         FCItemModel *m1 = [[FCItemModel alloc]init:^(FCItemModel *im) {
             im.itemSize = CGSizeMake(50, 20);
@@ -445,7 +458,7 @@
                 @"backgroundColor" : UIColor.redColor,
             };
         }];
-        sm.decorationViewType = FCCollectionViewDecorationViewTypeItemsContainer;
+//        sm.decorationViewType = FCCollectionViewDecorationViewTypeItemsContainer;
         sm.decorationViewMessages = @[dmM];
     }];
     [_datas addObject:sectionM5];

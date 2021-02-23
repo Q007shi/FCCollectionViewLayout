@@ -18,8 +18,6 @@
 @property(nonatomic, strong)NSString *reuseIdentifier;
 /** 层  */
 @property(nonatomic, assign)NSInteger zIndex;
-/** 组  */
-@property(nonatomic, assign)NSInteger section;
 /** zIndex用于设置front-to-back层级；值越大，优先布局在上层；cell的zIndex为0   */
 @property(nonatomic, strong, readonly)UICollectionViewLayoutAttributes *decorationViewLayoutAttributes;
 

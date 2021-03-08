@@ -25,8 +25,11 @@
 
 /** zIndex用于设置front-to-back层级；值越大，优先布局在上层；cell的zIndex为0  */
 @property(nonatomic, strong)UICollectionViewLayoutAttributes *decorationViewLayoutAttributes;
+
+
 /** 组  */
 @property(nonatomic, assign)NSInteger section;
+
 
 @end
 //** 装饰视图信息 **/
@@ -540,7 +543,7 @@
         NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = self.cachedItemFrame[k_Section_DecorationMsgs(section)];
         if ([decorationViewMsgs isKindOfClass:NSArray.class]) {
             for (FCCollectionViewDecorationViewMessageModel *decorationViewMsgM in decorationViewMsgs) {
-                CGRect decorationViewFrame = decorationViewMsgM.decorationViewLayoutAttributes.frame;
+                CGRect decorationViewFrame = [self.cachedItemFrame[k_Section_DecorationViewFrame(decorationViewMsgM.section)] CGRectValue];
                 if (![decorationViewMsgM.reuseIdentifier isKindOfClass:NSString.class] || ![decorationViewMsgM.decorationViewLayoutAttributes isKindOfClass:UICollectionViewLayoutAttributes.class]) break;
                 //计算位置
                 if (decorationViewMsgM.decorationViewCenter && decorationViewMsgM.decorationViewSize) {//决定位置和大小

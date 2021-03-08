@@ -80,11 +80,6 @@
     return self.datas.count;
 }
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section{
-    if (self.datas[section].items.count > 10) {
-        if (!self.datas[section].open) {
-            return 1;
-        }
-    }
     return self.datas[section].items.count;
 }
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath{
@@ -347,6 +342,45 @@
             im.itemSize = CGSizeMake(50, 20);
             im.contentEdgeInsets = UIEdgeInsetsMake(2, 3, 23, 24);
         }];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
+        [sm.items addObject:m8];
         [sm.items addObject:m8];
         [sm.items addObject:m8];
         [sm.items addObject:m8];

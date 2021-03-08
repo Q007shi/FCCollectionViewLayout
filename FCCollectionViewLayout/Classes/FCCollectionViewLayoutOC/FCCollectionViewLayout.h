@@ -29,6 +29,9 @@
 /** 显示在 DecorationViewFrame 的中心点，大小等于  decorationViewSize  */
 @property(nonatomic, assign)BOOL decorationViewCenter;
 
+/** 组  */
+@property(nonatomic, assign, readonly)NSInteger section;
+
 //********** 自定义 UICollectionViewLayoutAttributes
 /** 【可选】，默认UICollectionViewLayoutAttributes  */
 @property Class customLayoutAttributesClass;

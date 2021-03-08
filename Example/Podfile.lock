@@ -1,10 +1,10 @@
 PODS:
   - FCCategoryOCKit (0.1.15)
-  - FCCollectionViewLayout (0.0.12):
-    - FCCollectionViewLayout/ObjC (= 0.0.12)
-    - FCCollectionViewLayout/Swift (= 0.0.12)
-  - FCCollectionViewLayout/ObjC (0.0.12)
-  - FCCollectionViewLayout/Swift (0.0.12)
+  - FCCollectionViewLayout (0.0.13):
+    - FCCollectionViewLayout/ObjC (= 0.0.13)
+    - FCCollectionViewLayout/Swift (= 0.0.13)
+  - FCCollectionViewLayout/ObjC (0.0.13)
+  - FCCollectionViewLayout/Swift (0.0.13)
   - FDFullscreenPopGesture (1.1)
   - Masonry (1.1.0)
   - MJRefresh (3.5.0)
@@ -42,7 +42,7 @@ CHECKOUT OPTIONS:
 
 SPEC CHECKSUMS:
   FCCategoryOCKit: 05a9d0ab9a8ec644d4e07d73efd6caede804138a
-  FCCollectionViewLayout: e92f153b2968ae5356a36af2d04d3fb36a2c25d3
+  FCCollectionViewLayout: 307061711cc819948d9e2b4e8afee188d9231b68
   FDFullscreenPopGesture: a8a620179e3d9c40e8e00256dcee1c1a27c6d0f0
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   MJRefresh: 6afc955813966afb08305477dd7a0d9ad5e79a16

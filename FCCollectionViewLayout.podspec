@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'FCCollectionViewLayout'
-  s.version          = '0.0.12'
+  s.version          = '0.0.13'
   s.summary          = 'A short description of FCCollectionViewLayout.'
 
 # This description is used to generate tags and improve search results.

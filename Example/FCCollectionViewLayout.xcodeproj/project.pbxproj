@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3DCD1C641A3380C9C9BECC39 /* Pods_FCCollectionViewLayout_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B6211B9A17576DB3EDDD021 /* Pods_FCCollectionViewLayout_Example.framework */; };
 		554F7FF92574DA87001C6B19 /* FCSectionModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 554F7FF82574DA87001C6B19 /* FCSectionModel.m */; };
+		5573F4322603987500E8F4C5 /* FCCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 5573F4312603987500E8F4C5 /* FCCollectionViewCell.m */; };
 		55EC19BE257E040000A255BD /* FCCollectionReusableView_One.m in Sources */ = {isa = PBXBuildFile; fileRef = 55EC19BD257E040000A255BD /* FCCollectionReusableView_One.m */; };
 		55EC19C2257E042700A255BD /* FCCollectionReusableView_Two.m in Sources */ = {isa = PBXBuildFile; fileRef = 55EC19C1257E042700A255BD /* FCCollectionReusableView_Two.m */; };
 		55F55235257F506A007A631A /* FCCollectionViewLayoutAttributes.m in Sources */ = {isa = PBXBuildFile; fileRef = 55F55234257F506A007A631A /* FCCollectionViewLayoutAttributes.m */; };
@@ -27,6 +28,8 @@
 /* Begin PBXFileReference section */
 		554F7FF72574DA87001C6B19 /* FCSectionModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FCSectionModel.h; sourceTree = "<group>"; };
 		554F7FF82574DA87001C6B19 /* FCSectionModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FCSectionModel.m; sourceTree = "<group>"; };
+		5573F4302603987500E8F4C5 /* FCCollectionViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FCCollectionViewCell.h; sourceTree = "<group>"; };
+		5573F4312603987500E8F4C5 /* FCCollectionViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FCCollectionViewCell.m; sourceTree = "<group>"; };
 		55EC19BC257E040000A255BD /* FCCollectionReusableView_One.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FCCollectionReusableView_One.h; sourceTree = "<group>"; };
 		55EC19BD257E040000A255BD /* FCCollectionReusableView_One.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FCCollectionReusableView_One.m; sourceTree = "<group>"; };
 		55EC19C0257E042700A255BD /* FCCollectionReusableView_Two.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FCCollectionReusableView_Two.h; sourceTree = "<group>"; };
@@ -137,6 +140,8 @@
 				55EC19C1257E042700A255BD /* FCCollectionReusableView_Two.m */,
 				55F55233257F506A007A631A /* FCCollectionViewLayoutAttributes.h */,
 				55F55234257F506A007A631A /* FCCollectionViewLayoutAttributes.m */,
+				5573F4302603987500E8F4C5 /* FCCollectionViewCell.h */,
+				5573F4312603987500E8F4C5 /* FCCollectionViewCell.m */,
 			);
 			name = "Example for FCCollectionViewLayout";
 			path = FCCollectionViewLayout;
@@ -294,6 +299,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				55EC19BE257E040000A255BD /* FCCollectionReusableView_One.m in Sources */,
+				5573F4322603987500E8F4C5 /* FCCollectionViewCell.m in Sources */,
 				6003F59E195388D20070C39A /* FCAppDelegate.m in Sources */,
 				6003F5A7195388D20070C39A /* FCViewController.m in Sources */,
 				55EC19C2257E042700A255BD /* FCCollectionReusableView_Two.m in Sources */,

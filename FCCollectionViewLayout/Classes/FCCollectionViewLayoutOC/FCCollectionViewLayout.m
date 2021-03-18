@@ -504,37 +504,38 @@
 }
 //MARK:  求 DecorationView 的 frame =  item 和 headerView、footerView Frame的交集
 - (void)fc_decorationViewFrameWithUnion:(UICollectionViewLayoutAttributes *)layoutAttributes{
-    if (layoutAttributes.representedElementCategory == UICollectionElementCategoryDecorationView)   return;
-    NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = [self fc_decorationViewMessagesAtIndex:layoutAttributes.indexPath.section];
-    if (decorationViewMsgs == nil || ![decorationViewMsgs isKindOfClass:NSArray.class] || decorationViewMsgs.count == 0) return;
-    
-    //是否包含组头或组尾
-    FCCollectionViewDecorationViewType decorationViewType = [self fc_decorationViewTypeAtIndex:layoutAttributes.indexPath.section];
-    //不包含组头
-    if (((decorationViewType & FCCollectionViewDecorationViewTypeContainSectionHeaderView) == NO && layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader])) {
-        return;
+    if (layoutAttributes.representedElementCategory != UICollectionElementCategoryDecorationView){
+        NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = [self fc_decorationViewMessagesAtIndex:layoutAttributes.indexPath.section];
+        if (decorationViewMsgs == nil || ![decorationViewMsgs isKindOfClass:NSArray.class] || decorationViewMsgs.count == 0) return;
+        
+        //是否包含组头或组尾
+        FCCollectionViewDecorationViewType decorationViewType = [self fc_decorationViewTypeAtIndex:layoutAttributes.indexPath.section];
+        //不包含组头
+        if (((decorationViewType & FCCollectionViewDecorationViewTypeContainSectionHeaderView) == NO && layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionHeader])) {
+            return;
+        }
+        //不包含组尾
+        if (((decorationViewType & FCCollectionViewDecorationViewTypeContainSectionFooterView) == NO && layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter])) {
+            return;
+        }
+        NSValue *decorationViewFrameValue = self.cachedItemFrame[k_Section_DecorationViewFrame(layoutAttributes.indexPath.section)];
+        if (decorationViewFrameValue == nil) {
+            decorationViewFrameValue = @(layoutAttributes.frame);
+        }else{
+            decorationViewFrameValue = @(CGRectUnion(decorationViewFrameValue.CGRectValue, layoutAttributes.frame));
+        }
+        //CollectionView 的有效宽度
+        if (decorationViewType & FCCollectionViewDecorationViewTypeValidWidth) {
+            CGRect tempRect = CGRectMake(0, decorationViewFrameValue.CGRectValue.origin.y, CGRectGetWidth(self.collectionView.frame), decorationViewFrameValue.CGRectValue.size.height);
+            decorationViewFrameValue = @(CGRectUnion(decorationViewFrameValue.CGRectValue, tempRect));
+        }
+        self.cachedItemFrame[k_Section_DecorationViewFrame(layoutAttributes.indexPath.section)] = decorationViewFrameValue;
+        //
+        for (FCCollectionViewDecorationViewMessageModel *dcViewMsgM in decorationViewMsgs) {
+            dcViewMsgM.decorationViewLayoutAttributes.frame = decorationViewFrameValue.CGRectValue;
+        }
+        self.cachedItemFrame[k_Section_DecorationMsgs(layoutAttributes.indexPath.section)] = decorationViewMsgs;
     }
-    //不包含组尾
-    if (((decorationViewType & FCCollectionViewDecorationViewTypeContainSectionFooterView) == NO && layoutAttributes.representedElementCategory == UICollectionElementCategorySupplementaryView && [layoutAttributes.representedElementKind isEqualToString:UICollectionElementKindSectionFooter])) {
-        return;
-    }
-    NSValue *decorationViewFrameValue = self.cachedItemFrame[k_Section_DecorationViewFrame(layoutAttributes.indexPath.section)];
-    if (decorationViewFrameValue == nil) {
-        decorationViewFrameValue = @(layoutAttributes.frame);
-    }else{
-        decorationViewFrameValue = @(CGRectUnion(decorationViewFrameValue.CGRectValue, layoutAttributes.frame));
-    }
-    //CollectionView 的有效宽度
-    if (decorationViewType & FCCollectionViewDecorationViewTypeValidWidth) {
-        CGRect tempRect = CGRectMake(0, decorationViewFrameValue.CGRectValue.origin.y, CGRectGetWidth(self.collectionView.frame), decorationViewFrameValue.CGRectValue.size.height);
-        decorationViewFrameValue = @(CGRectUnion(decorationViewFrameValue.CGRectValue, tempRect));
-    }
-    self.cachedItemFrame[k_Section_DecorationViewFrame(layoutAttributes.indexPath.section)] = decorationViewFrameValue;
-    //
-    for (FCCollectionViewDecorationViewMessageModel *dcViewMsgM in decorationViewMsgs) {
-        dcViewMsgM.decorationViewLayoutAttributes.frame = decorationViewFrameValue.CGRectValue;
-    }
-    self.cachedItemFrame[k_Section_DecorationMsgs(layoutAttributes.indexPath.section)] = decorationViewMsgs;
 }
 
 /** 根据 edgeInsets 修改 decorationViewFrame */
@@ -632,6 +633,13 @@
         //
         [sectionSet addObject:@(layoutAttributes.indexPath.section)];
     }
+    //Cell 有遗漏现象
+    for (NSNumber *section in sectionSet) {
+        NSInteger num = [self.collectionView numberOfItemsInSection:section.integerValue];
+        for (NSInteger item = 0; item < num; ++item) {
+            [newLayoutAttributes addObject:[self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:item inSection:section.integerValue]]];
+        }
+    }
     //
     for (UICollectionViewLayoutAttributes *layoutAttributes in newLayoutAttributes) {
         //
@@ -642,6 +650,9 @@
                     offsetY += [self fc_sectionSpaceAtIndex:tempSection];
                 }
                 layoutAttributes.frame = CGRectOffset(layoutAttributes.frame, 0, offsetY);
+            }
+            if (layoutAttributes.representedElementCategory == UICollectionElementCategoryCell) {
+                NSLog(@"section : %@ - item : %@",@(layoutAttributes.indexPath.section),@(layoutAttributes.indexPath.item));
             }
         }
         //

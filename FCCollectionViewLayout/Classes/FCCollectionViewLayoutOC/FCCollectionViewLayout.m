@@ -695,6 +695,10 @@
     return size;
 }
 
+- (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds {
+    return YES;
+}
+
 - (NSNumber *)sectionSpaceOffsetY{
     if (!_sectionSpaceOffsetY) {
         NSInteger sectionNum = self.collectionView.numberOfSections -1;
@@ -710,3 +714,4 @@
 
 
 @end
+

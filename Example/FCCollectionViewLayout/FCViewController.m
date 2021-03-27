@@ -72,9 +72,51 @@
     
     [self _setupData];
     
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
+    btn.backgroundColor = UIColor.redColor;
+    btn.frame = CGRectMake(30, 50, 50, 50);
+    btn.layer.cornerRadius = 25;
+    btn.layer.masksToBounds = YES;
+    [self.view addSubview:btn];
+    [btn addTarget:self action:@selector(_addAction) forControlEvents:UIControlEventTouchUpInside];
+    
 }
 - (void)viewDidAppear:(BOOL)animated{
     [super viewDidAppear:animated];
+}
+
+- (void)_addAction{
+    
+    
+    CGFloat itemW = CGRectGetWidth(self.view.bounds) - 50;
+    
+    FCSectionModel *sm1 = FCSectionModel.new;
+    sm1.sectionHeaderSize = CGSizeMake(itemW, 20);
+    sm1.sectionHeaderClass = UICollectionReusableView.class;
+    sm1.sectionFooterSize = CGSizeMake(itemW, 10);
+    sm1.horizontalAlignment = FCCollectionViewItemsHorizontalAlignmentCenter;
+    sm1.lineSpace = 1;
+    
+    
+    FCCollectionViewDecorationViewMessageModel *dm1_1 = FCCollectionViewDecorationViewMessageModel.new;
+    dm1_1.reuseIdentifier = NSStringFromClass(FCCollectionReusableView_One.class);
+    dm1_1.zIndex = -1;
+    dm1_1.decorationViewEdgeInsets = @(UIEdgeInsetsMake(-10, -10, -10, -10));
+    sm1.decorationViewMessages = @[dm1_1];
+    
+    FCItemModel *im1_1 = FCItemModel.new;
+    im1_1.itemSize = CGSizeMake(itemW, arc4random_uniform(300));
+    im1_1.itemClass = UICollectionViewCell.class;
+    [sm1.items addObject:im1_1];
+    
+    FCItemModel *im1_2 = FCItemModel.new;
+    im1_2.itemSize = CGSizeMake(itemW, arc4random_uniform(110));
+    im1_2.itemClass = UICollectionViewCell.class;
+    [sm1.items addObject:im1_2];
+    
+    
+    [self.datas insertObject:sm1 atIndex:0];
+    [self.collectionView reloadData];
 }
 
 //MARK: UICollectionViewDataSource

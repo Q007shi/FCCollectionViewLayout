@@ -36,7 +36,7 @@
 @implementation FCCollectionViewDecorationViewMessageModel
 
 - (UICollectionViewLayoutAttributes *)decorationViewLayoutAttributes{
-    if (!_decorationViewLayoutAttributes) {
+    if (!_decorationViewLayoutAttributes || ![_decorationViewLayoutAttributes isKindOfClass:UICollectionViewLayoutAttributes.class]) {
         if (self.reuseIdentifier && [self.reuseIdentifier isKindOfClass:NSString.class] && self.reuseIdentifier.length > 0) {
             if (self.customLayoutAttributesClass) {
                 _decorationViewLayoutAttributes = [self.customLayoutAttributesClass layoutAttributesForDecorationViewOfKind:self.reuseIdentifier withIndexPath:[NSIndexPath indexPathForItem:0 inSection:self.section]];
@@ -162,26 +162,34 @@
 }
 
 /**  判断当前 Cell 与上一个 Cell 是否在同一水平线上 */
-- (BOOL)fc_isLinePreviousCellAtIndexPath:(NSIndexPath *)indexPath{
-    if (indexPath.item == 0) return NO;
+- (UICollectionViewLayoutAttributes *)fc_isLinePreviousCellAtIndexPath:(NSIndexPath *)indexPath{
+    if (indexPath.item == 0) return nil;
     UICollectionViewLayoutAttributes *currentLayoutAttributes = [super layoutAttributesForItemAtIndexPath:indexPath];
     UICollectionViewLayoutAttributes *previousLayoutAttributes = [super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:indexPath.item - 1 inSection:indexPath.section]];
     UIEdgeInsets insets = [self fc_insetForSectionAtIndex:indexPath.section];
     CGRect currentLineFrame = CGRectMake(insets.left, CGRectGetMinY(currentLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(currentLayoutAttributes.frame));
     CGRect previousLineFrame = CGRectMake(insets.left, CGRectGetMinY(previousLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(previousLayoutAttributes.frame));
-    return CGRectIntersectsRect(currentLineFrame, previousLineFrame);
+    BOOL result = CGRectIntersectsRect(currentLineFrame, previousLineFrame);
+    if (result) {
+        return currentLayoutAttributes;
+    }
+    return nil;
 }
 
 /** 判断当前 Cell 与下一个Cell是否在同一行 */
-- (BOOL)fc_isLineNextCellAtIndexPath:(NSIndexPath *)indexPath{
+- (UICollectionViewLayoutAttributes *)fc_isLineNextCellAtIndexPath:(NSIndexPath *)indexPath{
     NSInteger num = [self.collectionView numberOfItemsInSection:indexPath.section];
-    if (indexPath.item == num-1) return NO;
+    if (indexPath.item == num-1) return nil;
     UIEdgeInsets insets = [self fc_insetForSectionAtIndex:indexPath.section];
     UICollectionViewLayoutAttributes *currentLayoutAttributes = [super layoutAttributesForItemAtIndexPath:indexPath];
     UICollectionViewLayoutAttributes *nextLayoutAttributes = [super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:indexPath.item+1 inSection:indexPath.section]];
     CGRect currentLineFrame = CGRectMake(insets.left, CGRectGetMinY(currentLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(currentLayoutAttributes.frame));
     CGRect nextLineFrame = CGRectMake(insets.left, CGRectGetMinY(nextLayoutAttributes.frame), CGRectGetWidth(self.collectionView.frame), CGRectGetHeight(nextLayoutAttributes.frame));
-    return CGRectIntersectsRect(currentLineFrame, nextLineFrame);
+    BOOL result = CGRectIntersectsRect(currentLineFrame, nextLineFrame);
+    if (result) {
+        return currentLayoutAttributes;
+    }
+    return nil;
 }
 
 /** 获取当前 Cell 所在行的所有 Cell 布局 */
@@ -191,9 +199,9 @@
     NSInteger previousIndex = indexPath.item;
     while (previousIndex > 0) {
         --previousIndex;
-        BOOL previousIsLine = [self fc_isLineNextCellAtIndexPath:[NSIndexPath indexPathForItem:previousIndex inSection:indexPath.section]];
-        if (previousIsLine) {
-            [mArr addObject:[super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:previousIndex inSection:indexPath.section]]];
+        UICollectionViewLayoutAttributes *currentItemLayoutAttributes = [self fc_isLineNextCellAtIndexPath:[NSIndexPath indexPathForItem:previousIndex inSection:indexPath.section]];
+        if (currentItemLayoutAttributes) {
+            [mArr addObject:currentItemLayoutAttributes];
         }else{
             previousIndex = 0;
         }
@@ -205,9 +213,9 @@
     NSInteger allItemNum = [self.collectionView numberOfItemsInSection:indexPath.section];
     while (nextIndex < allItemNum-1) {
         ++nextIndex;
-        BOOL nextIsLine = [self fc_isLinePreviousCellAtIndexPath:[NSIndexPath indexPathForItem:nextIndex inSection:indexPath.section]];
-        if (nextIsLine) {
-            [mArr addObject:[super layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:nextIndex inSection:indexPath.section]]];
+        UICollectionViewLayoutAttributes *currentItemLayoutAttributes = [self fc_isLinePreviousCellAtIndexPath:[NSIndexPath indexPathForItem:nextIndex inSection:indexPath.section]];
+        if (currentItemLayoutAttributes) {
+            [mArr addObject:currentItemLayoutAttributes];
         }else{
             nextIndex = allItemNum;
         }
@@ -612,6 +620,18 @@
     self.cachedItemFrame = @{}.mutableCopy;
     self.sectionSpaceOffsetY = nil;
     self.waterFlowOffsetY = nil;
+    //
+    NSInteger sectionNum = [self.collectionView numberOfSections];
+    for (NSInteger section = 0; section < sectionNum; ++section) {
+        NSArray<FCCollectionViewDecorationViewMessageModel *> *decorationViewMsgs = [self fc_decorationViewMessagesAtIndex:section];
+        if (decorationViewMsgs && decorationViewMsgs.count > 0) {
+            for (FCCollectionViewDecorationViewMessageModel *decMsgM in decorationViewMsgs) {
+                if (decMsgM.decorationViewLayoutAttributes) {
+                    [decMsgM setValue:NSNull.null forKey:@"decorationViewLayoutAttributes"];
+                }
+            }
+        }
+    }
 }
 
 - (nullable NSArray<__kindof UICollectionViewLayoutAttributes *> *)layoutAttributesForElementsInRect:(CGRect)rect{
@@ -622,22 +642,36 @@
     NSArray *originalLayoutAttributes = [super layoutAttributesForElementsInRect:rect];
     NSMutableArray *newLayoutAttributes = originalLayoutAttributes.mutableCopy;
     
-    NSMutableSet *sectionSet = NSMutableSet.set;
+    NSMutableDictionary *cashDic = NSMutableDictionary.dictionary;
     
     for (UICollectionViewLayoutAttributes *layoutAttributes in originalLayoutAttributes) {
         //
         if (!layoutAttributes.representedElementKind && layoutAttributes.representedElementCategory == UICollectionElementCategoryCell) {
             NSInteger newIndex = [newLayoutAttributes indexOfObject:layoutAttributes];
             newLayoutAttributes[newIndex] = [self layoutAttributesForItemAtIndexPath:layoutAttributes.indexPath];
+            
+            //
+            if ([cashDic.allKeys containsObject:@(layoutAttributes.indexPath.section)]) {
+                NSMutableArray *mArr = cashDic[@(layoutAttributes.indexPath.section)];
+                [mArr addObject:@(layoutAttributes.indexPath.item)];
+            }else{
+                NSMutableArray *mArr = NSMutableArray.array;
+                [mArr addObject:@(layoutAttributes.indexPath.item)];
+                cashDic[@(layoutAttributes.indexPath.section)] = mArr;
+            }
         }
-        //
-        [sectionSet addObject:@(layoutAttributes.indexPath.section)];
+        
     }
     //Cell 有遗漏现象
-    for (NSNumber *section in sectionSet) {
-        NSInteger num = [self.collectionView numberOfItemsInSection:section.integerValue];
-        for (NSInteger item = 0; item < num; ++item) {
-            [newLayoutAttributes addObject:[self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:item inSection:section.integerValue]]];
+    for (NSNumber *section in cashDic.allKeys) {
+        NSMutableArray *mArr = cashDic[section];
+        if (mArr && mArr.count > 0) {
+            NSInteger maxItem = [[mArr valueForKeyPath:@"@max.self"] integerValue];
+            for (NSInteger item = 0; item < maxItem; ++item) {
+                if (![mArr containsObject:@(item)]) {
+                    [newLayoutAttributes addObject:[self layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:item inSection:section.integerValue]]];
+                }
+            }
         }
     }
     //
@@ -651,17 +685,17 @@
                 }
                 layoutAttributes.frame = CGRectOffset(layoutAttributes.frame, 0, offsetY);
             }
-            if (layoutAttributes.representedElementCategory == UICollectionElementCategoryCell) {
-                NSLog(@"section : %@ - item : %@",@(layoutAttributes.indexPath.section),@(layoutAttributes.indexPath.item));
-            }
+//            if (layoutAttributes.representedElementCategory == UICollectionElementCategoryCell) {
+//                NSLog(@"section : %@ - item : %@",@(layoutAttributes.indexPath.section),@(layoutAttributes.indexPath.item));
+//            }
         }
         //
         [self fc_decorationViewFrameWithUnion:layoutAttributes];
     }
     //DecorationView 处理
-    for (NSNumber *section in sectionSet) {
-        [newLayoutAttributes addObjectsFromArray:[self fc_decorationViewsWithRect:rect section:[section integerValue]]];
+    for (NSNumber *section in cashDic.allKeys) {
         [self fc_resetDecorationViewFrameAtIndex:[section integerValue]];
+        [newLayoutAttributes addObjectsFromArray:[self fc_decorationViewsWithRect:rect section:[section integerValue]]];
     }
     return newLayoutAttributes;
 }
